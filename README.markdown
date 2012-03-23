@@ -28,6 +28,7 @@ Default Controls (See Preferences dialog to remap them, need to reload
 the ROM for changes to apply): 
 
 Controller 1:
+
 -   D-Pad: Arrow Keys
 -   B Button: Z
 -   A Button: X
@@ -35,6 +36,7 @@ Controller 1:
 -   Start: Enter 
 
 Controller 2:
+
 -   D-Pad: WASD
 -   B Button: F
 -   A Button: G
