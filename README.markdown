@@ -14,32 +14,32 @@ HalfNES by Andrew Hoffman
 Released as free software under GPL V3 (See license.txt for details). 
 
 Current Features:
-- Joystick support through both DirectInput and xInput (thanks Zlika) 
-- Cross-Platform
-- Supports Mapper 0, 1, 2, 3, 4, 5, 7, 9, 
-11, 21, 22, 23, 24, 25, 26, 34, 66, 68, 69, 71, 78, 87, 118, 226 
-- Accurate sound core
-- Fast display code
-- Battery save support (No savestates! Come on. You can live without them.)
-- Remappable controls!
-- Full screen mode 
+
+-   Joystick support through both DirectInput and xInput (thanks Zlika) 
+-   Cross-Platform
+-   Supports Mapper 0, 1, 2, 3, 4, 5, 7, 9, 11, 21, 22, 23, 24, 25, 26, 34, 66, 68, 69, 71, 78, 87, 118, 226 
+-   Accurate sound core
+-   Fast display code
+-   Battery save support (No savestates! Come on. You can live without them.)
+-   Remappable controls!
+-   Full screen mode 
 
 Default Controls (See Preferences dialog to remap them, need to reload 
 the ROM for changes to apply): 
 
 Controller 1:
-- D-Pad: Arrow Keys
-- B Button: Z
-- A Button: X
-- Select: Right Shift
-- Start: Enter 
+-   D-Pad: Arrow Keys
+-   B Button: Z
+-   A Button: X
+-   Select: Right Shift
+-   Start: Enter 
 
 Controller 2:
-- D-Pad: WASD
-- B Button: F
-- A Button: G
-- Select: R
-- Start: T 
+-   D-Pad: WASD
+-   B Button: F
+-   A Button: G
+-   Select: R
+-   Start: T 
 
 Note on joystick support: 
 
