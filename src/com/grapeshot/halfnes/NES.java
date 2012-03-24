@@ -24,6 +24,9 @@ public class NES {
     private String curRomPath, curRomName;
     private final GUIInterface gui = new GUIImpl(this);
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
+    
+    private boolean hostMode, clientMode;
+    private String hostIP;
 
     public NES() {
         try{
@@ -312,4 +315,34 @@ public class NES {
     public ControllerInterface getcontroller2() {
         return controller2;
     }
+    
+    public void setHostMode(boolean hostMode) {
+        this.hostMode = hostMode;
+    }
+    
+    public boolean getHostMode() {
+        return this.hostMode;
+    }
+
+    public void setClientMode(boolean clientMode) {
+        this.clientMode = clientMode;
+    }
+
+    public void setClientMode(boolean clientMode, String hostIP) {
+        this.clientMode = clientMode;
+        this.hostIP = hostIP;
+    }
+    
+    public boolean getClientMode() {
+        return this.clientMode;
+    }
+    
+    public void setHostIP(String hostIP) {
+        this.hostIP = hostIP;
+    }
+    
+    public String getHostIP() {
+        return this.hostIP;
+    }
+    
 }
