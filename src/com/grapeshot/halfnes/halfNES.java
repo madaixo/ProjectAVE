@@ -38,12 +38,13 @@ public class halfNES {
             } else if(cli.hasOption("client")) {
                 String hostIP = cli.getOptionValue("client");
                 thing.setClientMode(true, hostIP);
+            } 
+            
+            String[] unknownArgs = cli.getArgs();
+            if(unknownArgs.length < 1) {
+                thing.run();
             } else {
-                if (args == null || args.length < 1 || args[0] == null) {
-                    thing.run();
-                } else {
-                    thing.run(args[0]);
-                }
+                thing.run(unknownArgs[0]);  // assume the first unknown argument is the ROM path
             }
         }
         catch(ParseException exp) {
