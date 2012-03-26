@@ -26,7 +26,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     private final Controller gameController;
     private final Component[] buttons;
     private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
-    private int latchbyte = 0, controllerbyte = 0, prevbyte = 0, outbyte = 0, gamepadbyte = 0;
+    protected int latchbyte = 0, controllerbyte = 0, prevbyte = 0, outbyte = 0, gamepadbyte = 0;
     private final HashMap<Integer, Integer> m = new HashMap<Integer, Integer>(10);
 
     public ControllerImpl(final java.awt.Component parent, final Preferences prefs, final int controllernum) {
@@ -133,7 +133,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     }
     double threshold = 0.25;
 
-    private Runnable eventQueueLoop() {
+    protected Runnable eventQueueLoop() {
         return new Runnable() {
 
             @Override

@@ -13,19 +13,21 @@ import org.apache.commons.cli.ParseException;
 
 public class halfNES {
 
-    private static final long serialVersionUID = -7269569171056445433L;
+    // private static final long serialVersionUID = -7269569171056445433L;
 
     public static void main(String[] args) throws IOException {
         try{
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         }catch(Exception e){
+            // ignore
         }
-        com.grapeshot.halfnes.NES thing = new com.grapeshot.halfnes.NES();
+        NES thing = new NES();
         
         // use Apache Commons CLI to parse command line options
         Options options = new Options();
         options.addOption("H", "host", false, "The emulator runs in host mode for network multiplayer");
         options.addOption("C", "client", true, "The emulator runs in client mode for network multiplayer. Receives the IP address of the host as argument.");
+        // TODO: use the Option class to specify options, it allows for finer grained control such as saying host takes an optional argument (the port).
         
         HelpFormatter formatter = new HelpFormatter();
         
@@ -39,6 +41,8 @@ public class halfNES {
                 String hostIP = cli.getOptionValue("client");
                 thing.setClientMode(true, hostIP);
             } 
+            
+            thing.startGUI();
             
             String[] unknownArgs = cli.getArgs();
             if(unknownArgs.length < 1) {

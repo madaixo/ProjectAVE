@@ -26,13 +26,22 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private GraphicsDevice gd;
     final int NES_HEIGHT = 224, NES_WIDTH;
     private Renderer renderer;
-    private final ControllerImpl padController1, padController2;
+    private final ControllerInterface padController1, padController2;
 
     public GUIImpl(NES nes) {
         this.nes = nes;
         screenScaleFactor = nes.getPrefs().getInt("screenScaling", 2);
-        padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
-        padController2 = new ControllerImpl(this, nes.getPrefs(), 1);
+        if(nes.getHostMode()) {
+            padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
+            padController2 = new ControllerImplHost(nes.getHostPort());
+        } else if(nes.getClientMode()) {
+            padController1 = new ControllerFake();
+            padController2 = new ControllerImplClient(this, nes.getPrefs(), 1, nes.getHostAddress(), nes.getHostPort());
+        } else {
+            padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
+            padController2 = new ControllerImpl(this, nes.getPrefs(), 1);
+        }
+        // FIXME: the implementation above might make it hard to graciously fallback in case of connection problems
         nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
         padController2.startEventQueue();

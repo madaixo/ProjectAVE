@@ -12,4 +12,6 @@ public interface ControllerInterface {
     public void strobe();
     public void output(final boolean state);
     public int getbyte();
+    public void startEventQueue();
+    public void stopEventQueue();
 }

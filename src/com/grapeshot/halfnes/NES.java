@@ -22,15 +22,22 @@ public class NES {
     public long frameStartTime, framecount, frameDoneTime;
     private boolean frameLimiterOn = true;
     private String curRomPath, curRomName;
-    private final GUIInterface gui = new GUIImpl(this);
+    private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
     
     private boolean hostMode, clientMode;
-    private String hostIP;
+    private String hostAddress;
+    private int hostPort;
+    private static final int defaultPort = 18451;  // FIXME: define the default port number in a better place
 
     public NES() {
+        // nothing to do, GUI init moved to startGUI()
+    }
+    
+    public void startGUI() {
+        gui = new GUIImpl(this);
         try{
-        java.awt.EventQueue.invokeAndWait(gui);
+            java.awt.EventQueue.invokeAndWait(gui);
         }catch(InterruptedException e){
             System.err.println("Could not initialize GUI. Exiting.");
             System.exit(-1);
@@ -316,33 +323,57 @@ public class NES {
         return controller2;
     }
     
+    
+    
     public void setHostMode(boolean hostMode) {
         this.hostMode = hostMode;
+        this.hostPort = defaultPort;
+    }
+    
+    public void setHostMode(boolean hostMode, int hostPort) {
+        this.hostMode = hostMode;
+        this.setHostPort(hostPort);
     }
     
     public boolean getHostMode() {
         return this.hostMode;
+    }
+    
+    public void setHostPort(int port) {
+        this.hostPort = port;
+        // TODO: enforce a port number between 10000 and 65535. Possibly check if port is bindable.
+    }
+    
+    public int getHostPort() {
+        return this.hostPort;
     }
 
     public void setClientMode(boolean clientMode) {
         this.clientMode = clientMode;
     }
 
-    public void setClientMode(boolean clientMode, String hostIP) {
+    public void setClientMode(boolean clientMode, String hostAddress) {
         this.clientMode = clientMode;
-        this.hostIP = hostIP;
+        this.setHostAddress(hostAddress);
     }
     
     public boolean getClientMode() {
         return this.clientMode;
     }
     
-    public void setHostIP(String hostIP) {
-        this.hostIP = hostIP;
+    public void setHostAddress(String hostAddress) {
+        int portStartIndex = hostAddress.lastIndexOf(":"); 
+        if(portStartIndex != -1) {
+            this.hostAddress = hostAddress.substring(0, portStartIndex);
+            this.setHostPort(Integer.parseInt(hostAddress.substring(portStartIndex+1)));
+        } else {
+            this.hostAddress = hostAddress;   
+            this.hostPort = defaultPort;
+        }
     }
     
-    public String getHostIP() {
-        return this.hostIP;
+    public String getHostAddress() {
+        return this.hostAddress;
     }
     
 }
