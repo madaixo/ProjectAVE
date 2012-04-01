@@ -26,21 +26,21 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private GraphicsDevice gd;
     final int NES_HEIGHT = 224, NES_WIDTH;
     private Renderer renderer;
-    private final ControllerInterface padController1, padController2;
+    private ControllerInterface padController1, padController2;
 
     public GUIImpl(NES nes) {
         this.nes = nes;
         screenScaleFactor = nes.getPrefs().getInt("screenScaling", 2);
-        if(nes.getHostMode()) {
+        /*if(nes.getHostMode()) {
             padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
             padController2 = new ControllerImplHost(nes.getHostPort());
         } else if(nes.getClientMode()) {
             padController1 = new ControllerFake();
             padController2 = new ControllerImplClient(this, nes.getPrefs(), 1, nes.getHostAddress(), nes.getHostPort());
-        } else {
+        } else {*/
             padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
             padController2 = new ControllerImpl(this, nes.getPrefs(), 1);
-        }
+        //}
         // FIXME: the implementation above might make it hard to graciously fallback in case of connection problems
         nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
@@ -189,6 +189,15 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
         menus.add(nesmenu);
+        
+        JMenu multiplayer = new JMenu("Network MP");
+        multiplayer.add(item = new JMenuItem("Run Host"));
+        item.addActionListener(listener);
+        //item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        multiplayer.add(item = new JMenuItem("Connect to a Host"));
+        item.addActionListener(listener);
+        //item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        menus.add(multiplayer);
 
         JMenu help = new JMenu("Help");
         help.add(item = new JMenuItem("About"));
@@ -336,6 +345,10 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private int getmaxscale(final int width, final int height) {
         return Math.min(height / NES_HEIGHT, width / NES_WIDTH);
     }
+    
+    public GUIImpl getThis(){
+    	return this;
+    }
 
     public class AL implements ActionListener, WindowListener {
 
@@ -381,6 +394,34 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 } else {
                     nes.quit();
                 }
+            } else if(arg0.getActionCommand().equals("Run Host")) {
+            	System.out.println("Selected host");
+            	nes.setHostMode(true);
+            	
+            	padController1.stopEventQueue();
+                padController2.stopEventQueue();
+            	
+                padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
+                padController2 = new ControllerImplHost(nes.getHostPort());
+            
+                nes.setControllers(padController1, padController2);
+                padController1.startEventQueue();
+                padController2.startEventQueue();
+            	
+            	
+            } else if(arg0.getActionCommand().equals("Connect to a Host")) {
+            	System.out.println("Selected client");
+            	nes.setClientMode(true, "127.0.0.1");
+            	
+            	padController1.stopEventQueue();
+                padController2.stopEventQueue();
+            	
+                padController1 = new ControllerFake();
+                padController2 = new ControllerImplClient(getThis(), nes.getPrefs(), 1, nes.getHostAddress(), nes.getHostPort());
+
+                nes.setControllers(padController1, padController2);
+                padController1.startEventQueue();
+                padController2.startEventQueue();
             }
         }
 
