@@ -4,6 +4,8 @@ import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
 import java.util.prefs.Preferences;
 
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author Andrew Hoffman
@@ -24,6 +26,10 @@ public class NES {
     private String curRomPath, curRomName;
     private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
+    
+    // FIXME: TEST
+    private Server server;
+    private Client client;
     
     private boolean hostMode = false, clientMode = false;
     private String hostAddress;
@@ -335,6 +341,33 @@ public class NES {
         this.setHostPort(hostPort);
     }
     
+    public boolean setHostMode(){
+    	
+    	this.server = new Server(prefs.getInt("HostPort", NES.defaultPort));
+        if(!server.canBind()){
+        	this.server = null;
+        	//this.hostMode = false;
+        }else
+        	this.hostMode = true;
+        
+        return this.hostMode == true;
+    }
+    
+    public Server getServer(){
+    	return this.server;
+    }
+    
+    public void networkDisable(){
+    	
+    	//TODO terminate server or client
+    	
+    	this.server = null;
+    	this.client = null;
+    	
+    	this.hostMode = false;
+    	this.clientMode = false;
+    }
+    
     public boolean getHostMode() {
         return this.hostMode;
     }
@@ -355,6 +388,22 @@ public class NES {
     public void setClientMode(boolean clientMode, String hostAddress) {
         this.clientMode = clientMode;
         this.setHostAddress(hostAddress);
+    }
+    
+    public boolean setClientMode(String hostAddress, int hostPort){
+    	
+    	this.client = new Client(hostAddress, hostPort);
+        if(!client.canConnect()) {
+            this.client = null;
+            //this.clientMode = false;
+        }else
+        	this.clientMode = true;
+        
+        return this.clientMode == true;
+    }
+    
+    public Client getClient(){
+    	return this.client;
     }
     
     public boolean getClientMode() {
