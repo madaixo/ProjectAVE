@@ -10,21 +10,49 @@ import java.net.Socket;
 
 public class Server implements Runnable {
 
+    private int port;
     private ControllerImplHost controller;
+    private ServerSocket socket1 = null;
     
-    public Server(ControllerImplHost controller) {
+    public Server(int port, ControllerImplHost controller) {
+        this.port = port;
         this.controller = controller;
+    }
+    
+    public Server(int port) {
+        this.port = port;
+    }
+    
+    public void setController(ControllerImplHost controller) {
+        this.controller = controller;
+    }
+    
+    public boolean canBind() {
+        try {
+            this.socket1 = new ServerSocket(this.port);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    public int getPort() {
+        return this.port;
+    }
+    
+    public void setPort(int port) {
+        this.port = port;
     }
     
     @Override
     public void run() {
         // open a socket to receive controller input and return computed state
-        
-        ServerSocket socket1;
         Socket connection = null;
         
         try {
-            socket1 = new ServerSocket(controller.getPort());
+            if(this.socket1 == null) {
+                this.socket1 = new ServerSocket(this.port);
+            }
             int character;
             
             while (true) {
@@ -50,10 +78,9 @@ public class Server implements Runnable {
                     Thread.sleep(10);
                 }
                 catch (Exception e) {
-                    // FIXME: handle it
+                    // TODO: handle it
                 }
                 
-                // TODO: send back new state (or just the delta)
                 String returnCode = "ACK " + process + (char) 13;
                 BufferedOutputStream os = new BufferedOutputStream(connection.getOutputStream());
                 OutputStreamWriter osw = new OutputStreamWriter(os, "US-ASCII");
@@ -62,14 +89,14 @@ public class Server implements Runnable {
             }
         }
         catch (IOException e) {
-            // FIXME: handle it
+            // TODO: handle it
         }
         
         try {
             connection.close();
         }
         catch (IOException e) {
-            // FIXME: handle it
+            // TODO: handle it
         }
     }
 }

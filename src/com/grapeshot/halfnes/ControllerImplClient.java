@@ -5,23 +5,28 @@ import java.util.prefs.Preferences;
 
 public class ControllerImplClient extends ControllerImpl {
 
-    private static Client client;
+    private Client client;
     
     public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, String hostAddress, int hostPort) {
         super(parent, prefs, controllernum);
-        client = new Client(hostAddress, hostPort);
+        this.client = new Client(hostAddress, hostPort);
+    }
+    
+    public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, Client client) {
+        super(parent, prefs, controllernum);
+        this.client = client;
     }
 
     @Override
     public void keyPressed(final KeyEvent arg0) {
         super.keyPressed(arg0);
-        client.sendControllerbyte(this.controllerbyte);
+        this.client.sendControllerbyte(this.controllerbyte);
     }
 
     @Override
     public void keyReleased(final KeyEvent arg0) {
         super.keyReleased(arg0);
-        client.sendControllerbyte(this.controllerbyte);
+        this.client.sendControllerbyte(this.controllerbyte);
     }
     
     public void setControllerbyte(int value) {
@@ -35,7 +40,7 @@ public class ControllerImplClient extends ControllerImpl {
     @Override
     public void stopEventQueue() {
         super.stopEventQueue();
-        client.closeConnection();
+        this.client.closeConnection();
     }
     
     // TODO: handle the gamepad keypresses/releases

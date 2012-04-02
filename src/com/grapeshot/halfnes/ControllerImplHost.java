@@ -5,16 +5,22 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class ControllerImplHost implements ControllerInterface {
     
-    private int port;
+    private Server server;
     private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
     private int latchbyte = 0, controllerbyte = 0, outbyte = 0, gamepadbyte = 0;
     
     public ControllerImplHost() {
-        this.port = 18452;
+        int port = 18452;
+        this.server = new Server(port, this);
     }
     
     public ControllerImplHost(int port) {
-        this.port = port;   // port value is correct by the time it gets here
+        this.server = new Server(port, this);   // port value is correct by the time it gets here
+    }
+    
+    public ControllerImplHost(Server server) {
+        this.server = server;
+        this.server.setController(this);
     }
 
     public void strobe() {
@@ -32,15 +38,11 @@ public class ControllerImplHost implements ControllerInterface {
     }
     
     public void startEventQueue() {
-        thread.execute(new Server(this));
+        thread.execute(this.server);
     }
 
     public void stopEventQueue() {
         thread.shutdownNow();
-    }
-    
-    public int getPort() {
-        return this.port;
     }
     
     public void setGamepadbyte(int value) {

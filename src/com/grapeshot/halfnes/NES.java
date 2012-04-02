@@ -25,10 +25,10 @@ public class NES {
     private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
     
-    private boolean hostMode, clientMode;
+    private boolean hostMode = false, clientMode = false;
     private String hostAddress;
     private int hostPort;
-    private static final int defaultPort = 18451;  // FIXME: define the default port number in a better place
+    public static final int defaultPort = 18451;  // FIXME: define the default port number in a better place
 
     public NES() {
         // nothing to do, GUI init moved to startGUI()
@@ -376,4 +376,7 @@ public class NES {
         return this.hostAddress;
     }
     
+    public boolean isNetworkActive() {
+        return (this.hostMode || this.clientMode);
+    }
 }
