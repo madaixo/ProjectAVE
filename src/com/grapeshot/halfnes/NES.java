@@ -366,7 +366,9 @@ public class NES {
     public void networkDisable(){
     	
     	//TODO terminate server or client
-
+    	
+    	if(this.hostMode) this.server.closeSocket();
+    	
     	soundDevice.setServer(null);
     	
     	this.server = null;

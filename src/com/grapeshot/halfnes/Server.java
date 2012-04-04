@@ -45,6 +45,17 @@ public class Server implements Runnable {
         }
     }
     
+    public void closeSocket(){
+    	
+    	if(this.socket1 != null)
+			try {
+				this.socket1.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    }
+    
     public int getPort() {
         return this.port;
     }
@@ -85,7 +96,6 @@ public class Server implements Runnable {
             	try {
 					connectionClosedSignal.await();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
             	
@@ -93,8 +103,7 @@ public class Server implements Runnable {
             }
         }
         catch (IOException e) {
-            // TODO: handle it
-        	e.printStackTrace();
+        	return;
         }
     }
     
