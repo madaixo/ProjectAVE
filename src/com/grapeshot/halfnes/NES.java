@@ -26,10 +26,9 @@ public class NES {
     private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
     
-    // FIXME: TEST
     private Server server;
     private Client client;
-    private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));;
+    private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));
     
     private boolean hostMode = false, clientMode = false;
     private String hostAddress;
@@ -154,6 +153,7 @@ public class NES {
         ppu.ppuregs[2] |= 0x80;
         //render the frame
         if(hostMode){
+            // NB TODO: change this to use the new Server 
             gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
             gui.getSecondScreen().sendNewFrame();
         }
