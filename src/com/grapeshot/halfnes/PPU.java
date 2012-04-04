@@ -480,4 +480,9 @@ public class PPU {
     public final int getspritehit() {
         return (sprite0x < 255) ? sprite0x : -1;
     }
+    
+    public int[] getBitmap(){
+        return bitmap;
+        
+    }
 }

@@ -153,6 +153,10 @@ public class NES {
         //set the vblank flag
         ppu.ppuregs[2] |= 0x80;
         //render the frame
+        if(hostMode){
+            gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
+            gui.getSecondScreen().sendNewFrame();
+        }
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
             //save sram every 30 seconds or so

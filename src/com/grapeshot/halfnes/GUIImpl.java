@@ -7,6 +7,9 @@ import java.awt.image.*;
 import java.awt.datatransfer.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import javax.swing.*;
 
 public class GUIImpl extends JFrame implements GUIInterface {
@@ -27,7 +30,11 @@ public class GUIImpl extends JFrame implements GUIInterface {
     final int NES_HEIGHT = 224, NES_WIDTH;
     private Renderer renderer;
     private ControllerInterface padController1, padController2;
-    
+    public int[] bitmap;
+    public int color;
+    public ImageClient mpImage;
+    private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
+
     private JMenu networkMenu = null;
 
     public GUIImpl(NES nes) {
@@ -70,6 +77,17 @@ public class GUIImpl extends JFrame implements GUIInterface {
         //on Windows it does - on Mac probably not.
         fileDialog.setFilenameFilter(new NESFileFilter());
     }
+
+    // TODO: meh
+    public void setBitmap(int[] bit, int color){
+        this.bitmap = bit;
+        this.color = color;
+    }
+
+    public ImageClient getSecondScreen(){
+        return mpImage;
+    }
+
 
     public synchronized void run() {
         //construct window
@@ -277,7 +295,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
         //also move video filters into a worker thread because they
         //don't really depend on emulation state at all. Yes this is going to
         //cause more lag but it will hopefully get back up to playable speed with NTSC filter
-
+        /*
+        // TODO: needs some tweaking in order to show the framerate on both server and client
         frametimes[frametimeptr] = nes.getFrameTime();
         ++frametimeptr;
         frametimeptr %= frametimes.length;
@@ -295,6 +314,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
                     nes.getCurrentRomName(),
                     fps));
         }
+        */
 //        if (nes.framecount % (frameskip + 1) == 0) {
         frame = renderer.render(nextframe, bgcolor);
         render();
@@ -466,6 +486,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
                         padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
                         padController2 = new ControllerImplHost(nes.getServer());
+                        mpImage = new ImageClient(getThis());
 
                         nes.setControllers(padController1, padController2);
                         padController1.startEventQueue();
@@ -520,7 +541,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
         
                         padController1 = new ControllerFake();
                         padController2 = new ControllerImplClient(getThis(), nes.getPrefs(), 1, nes.getClient());
-        
+                        thread.execute(new ImageServer(getThis()));
+
                         nes.setControllers(padController1, padController2);
                         padController1.startEventQueue();
                         padController2.startEventQueue();
