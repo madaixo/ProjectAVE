@@ -6,12 +6,12 @@ import java.util.prefs.Preferences;
 public class ControllerImplClient extends ControllerImpl {
 
     private Client client;
-    
+    /*
     public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, String hostAddress, int hostPort) {
         super(parent, prefs, controllernum);
         this.client = new Client(hostAddress, hostPort);
     }
-    
+    */
     public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, Client client) {
         super(parent, prefs, controllernum);
         this.client = client;
