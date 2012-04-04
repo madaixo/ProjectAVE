@@ -22,7 +22,7 @@ public class APU {
     private final int[] tnd_lookup, square_lookup;
     private AudioOutInterface ai;
 
-    public APU(final NES nes, final CPU cpu, final CPURAM cpuram) {
+    public APU(final NES nes, final CPU cpu, final CPURAM cpuram, AudioOutInterface ai) {
         //fill square, triangle volume lookup tables
         square_lookup = new int[31];
         for (int i = 0; i < square_lookup.length; ++i) {
@@ -39,7 +39,8 @@ public class APU {
         soundFiltering = nes.getPrefs().getBoolean("soundFiltering", false);
         samplerate = nes.getPrefs().getInt("sampleRate", 44100);
         cyclespersample = 1789773.0 / samplerate;
-        ai = new SwingAudioImpl(nes, samplerate);
+        //ai = new SwingAudioImpl(nes, samplerate);
+        this.ai = ai;
     }
 
     public boolean bufferHasLessThan(int samples) {

@@ -15,36 +15,32 @@ public class Client {
     private int hostPort;
     private InetAddress address;
     private Socket connection;
+    private AudioOutInterface soundDevice;
     
-    public Client(String hostAddress, int hostPort) {
+    BufferedOutputStream bos;
+    OutputStreamWriter osw;
+    
+    public Client(String hostAddress, int hostPort, AudioOutInterface ai) {
+    	this.soundDevice = ai;
         this.hostAddress = hostAddress;
         this.hostPort = hostPort;
     }
     
     public void sendControllerbyte(int byteVal) {
-        this.openConnection();        
+        //this.openConnection();        
         this.send("" + byteVal);        
-        this.closeConnection();
+        //this.closeConnection();
     }
     
     private void send(String msg) {
-        StringBuffer instr = new StringBuffer();
+        //StringBuffer instr = new StringBuffer();
         
         try {
-            BufferedOutputStream bos = new BufferedOutputStream(this.connection.getOutputStream());
-            OutputStreamWriter osw = new OutputStreamWriter(bos, "US-ASCII");
             String process = "" + msg + (char) 13;  // using ASCII char 13 (aka CR) as terminating char
+            System.out.println("Sending "+process);
             osw.write(process);
             osw.flush();
 
-            BufferedInputStream bis = new BufferedInputStream(this.connection.getInputStream());
-            InputStreamReader isr = new InputStreamReader(bis, "US-ASCII");
-            int c;
-            while((c = isr.read()) != 13) {
-                instr.append((char) c);
-            }
-
-            System.out.println(instr);
         }
         catch (IOException f) {
             System.out.println("IOException: " + f);
@@ -54,10 +50,14 @@ public class Client {
         }
     }
     
-    public boolean canConnect() {
+    /*public boolean canConnect() {
         try {
             this.address = InetAddress.getByName(this.hostAddress);
             this.connection = new Socket(this.address, this.hostPort);
+            
+            bos = new BufferedOutputStream(this.connection.getOutputStream());
+            osw = new OutputStreamWriter(bos, "US-ASCII");
+            
             this.send("" + 0);
         } catch (UnknownHostException e) {
             return false;
@@ -72,27 +72,83 @@ public class Client {
         }
         
         return true;
-    }
+    }*/
     
-    public void openConnection() {
+    public boolean openConnection() {
         try {
             this.address = InetAddress.getByName(this.hostAddress);
             this.connection = new Socket(this.address, this.hostPort);
+            
+            bos = new BufferedOutputStream(this.connection.getOutputStream());
+            osw = new OutputStreamWriter(bos, "US-ASCII");
+            
+            new Reader(connection).start();
+            
+            return true;
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+        	return false;
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            return false;
         }
     }
     
     public void closeConnection() {
         try {
+        	osw.close();
+        	bos.close();
             this.connection.close();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+    
+class Reader extends Thread{
+    	
+    	private BufferedInputStream is;
+    	private InputStreamReader isr;
+    	
+    	public Reader(Socket connection){
+
+    		try {
+				is = new BufferedInputStream(connection.getInputStream());
+				isr = new InputStreamReader(is);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	
+    	public void run(){
+    		
+    		try {
+    			int character, sample;
+        	
+    			while(true){
+        		
+    				StringBuffer process = new StringBuffer();
+    				
+					while((character = isr.read()) != 13) { // ASCII character 13 = CR
+						if(character == -1){
+							return;
+						}
+
+					    process.append((char)character);
+					}
+					sample = Integer.parseInt(process.toString());
+					
+					if(sample == 0)
+						soundDevice.flushFrame(false);
+					else
+						soundDevice.outputSample(sample);
+        		
+    			}
+    		} catch (IOException e) {
+    			// FIXME: ver se funciona
+				return;
+			}
+    	}
     }
 }

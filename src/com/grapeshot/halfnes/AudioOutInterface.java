@@ -21,4 +21,6 @@ public interface AudioOutInterface {
     public void destroy();
 
     public boolean bufferHasLessThan(int samples);
+    
+    public void setServer(Server server);
 }

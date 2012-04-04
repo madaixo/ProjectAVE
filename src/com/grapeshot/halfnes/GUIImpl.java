@@ -344,7 +344,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     }
 
     public void showoptdlg() {
-        final PreferencesDialog dialog = new PreferencesDialog(this, nes.getPrefs(), nes.defaultPort);
+        final PreferencesDialog dialog = new PreferencesDialog(this, nes.getPrefs(), NES.defaultPort);
         dialog.setVisible(true);
     }
 
@@ -424,7 +424,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
             } else if(arg0.getActionCommand().equals("Disable")) {
                 
             	nes.networkDisable();
-                
+            	
                 padController1.stopEventQueue();
                 padController2.stopEventQueue();
                 
@@ -444,29 +444,42 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 	JOptionPane.showMessageDialog(getThis(), "Unable to use port "+currentPort, "Run as Host", JOptionPane.ERROR_MESSAGE);
                     return;
                 }*/
-                
-                if(!nes.setHostMode()){
-                	JOptionPane.showMessageDialog(getThis(), "Unable to use port "+nes.getPrefs().getInt("HostPort", NES.defaultPort), "Run as Host", JOptionPane.ERROR_MESSAGE);
-                	return;
-                }
-                
-                padController1.stopEventQueue();
-                padController2.stopEventQueue();
+            	
+            	String port = String.valueOf(nes.getPrefs().getInt("HostPort", NES.defaultPort));
+            	
+            	do{
+            		port = JOptionPane.showInputDialog(getThis(), "Select a port", port);
+            		
+            		if(port != null){
+            			// TODO: check if valid port
+            			int intport = Integer.parseInt(port);
+            			
+            			if(!nes.setHostMode(intport)){
+                        	JOptionPane.showMessageDialog(getThis(), "Unable to use port "+port, "Run as Host", JOptionPane.ERROR_MESSAGE);
+                        	continue;
+                        }
+            			
+            			padController1.stopEventQueue();
+                        padController2.stopEventQueue();
 
-                //nes.setHostMode(true, currentPort);
+                        //nes.setHostMode(true, currentPort);
 
-                padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
-                padController2 = new ControllerImplHost(nes.getServer());
+                        padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
+                        padController2 = new ControllerImplHost(nes.getServer());
 
-                nes.setControllers(padController1, padController2);
-                padController1.startEventQueue();
-                padController2.startEventQueue();
+                        nes.setControllers(padController1, padController2);
+                        padController1.startEventQueue();
+                        padController2.startEventQueue();
+            			
+                        break;
+            		}
+            	}while(port != null);
                 
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Connect to a Host")) {
                 
                 String hostAddress = null;
-                String currentAddress = "127.0.0.1:"+nes.defaultPort;
+                String currentAddress = "127.0.0.1:"+NES.defaultPort;
                 String host;
             	int port;
                 
@@ -482,7 +495,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             port = Integer.parseInt(hostAddress.substring(portStartIndex+1));
                         } else {
                             host = hostAddress;   
-                            port = nes.defaultPort;
+                            port = NES.defaultPort;
                         }
                         
                         if(!nes.setClientMode(host, port)){
@@ -499,7 +512,9 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             nes.setClientMode(false);
                             continue;
                         }*/
-        
+                        
+                        /* Configure controllers */
+                        
                         padController1.stopEventQueue();
                         padController2.stopEventQueue();
         

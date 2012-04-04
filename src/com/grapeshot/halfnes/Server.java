@@ -7,12 +7,21 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Server implements Runnable {
 
     private int port;
     private ControllerImplHost controller;
     private ServerSocket socket1 = null;
+    private CountDownLatch connectionClosedSignal = new CountDownLatch(1);
+    private BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
+    
+    //Test
+    BufferedOutputStream bos;
+    OutputStreamWriter osw;
     
     public Server(int port, ControllerImplHost controller) {
         this.port = port;
@@ -44,59 +53,125 @@ public class Server implements Runnable {
         this.port = port;
     }
     
+    public void sendSoundSample(int sample){
+    	String process = "" + sample + (char) 13;
+    	queue.offer(process);
+    }
+    
+    public void sendSoundFlush(){
+    	String process = "" + 0 + (char) 13;
+    	queue.offer(process);
+    }
+    
     @Override
     public void run() {
         // open a socket to receive controller input and return computed state
-        Socket connection = null;
-        
+    	Socket connection = null;
+    	
         try {
             if(this.socket1 == null) {
                 this.socket1 = new ServerSocket(this.port);
             }
-            int character;
             
-            while (true) {
-                connection = socket1.accept();
-                
-                BufferedInputStream is = new BufferedInputStream(connection.getInputStream());
-                InputStreamReader isr = new InputStreamReader(is);
-                StringBuffer process = new StringBuffer();
-                
-                while((character = isr.read()) != 13) { // ASCII character 13 = CR
-                    process.append((char)character);
-                }
-                
-                // TODO: 
-                // - handle delays/packet loss
-                // - decide if we really want to use TCP or if UDP is enough
-                
-                
-                System.out.println(process);
-                controller.setControllerbyte(Integer.parseInt(process.toString()));
-                
-                try {
-                    Thread.sleep(10);
-                }
-                catch (Exception e) {
-                    // TODO: handle it
-                }
-                
-                String returnCode = "ACK " + process + (char) 13;
-                BufferedOutputStream os = new BufferedOutputStream(connection.getOutputStream());
-                OutputStreamWriter osw = new OutputStreamWriter(os, "US-ASCII");
-                osw.write(returnCode);
-                osw.flush();
+            while(true){
+            	
+            	connection = socket1.accept();
+            	
+            	Reader reader = new Reader(connection);
+            	reader.start();
+            	Writer writer = new Writer(connection);
+            	writer.start();
+            	
+            	try {
+					connectionClosedSignal.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	
+            	writer.interrupt();
             }
         }
         catch (IOException e) {
             // TODO: handle it
+        	e.printStackTrace();
+        }
+    }
+    
+    class Writer extends Thread{
+    	
+    	BufferedOutputStream bos;
+        OutputStreamWriter osw;
+        
+        public Writer(Socket connection){
+        	try {
+				bos = new BufferedOutputStream(connection.getOutputStream());
+				osw = new OutputStreamWriter(bos, "US-ASCII");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
         
-        try {
-            connection.close();
+        public void run(){
+        	
+        	String send = null;
+			while(true){
+				try {
+					send = queue.take();
+					osw.write(send);
+					osw.flush();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					return;
+				}
+			}
         }
-        catch (IOException e) {
-            // TODO: handle it
-        }
+    }
+    
+    class Reader extends Thread{
+    	
+    	private BufferedInputStream is;
+    	private InputStreamReader isr;
+    	
+    	public Reader(Socket connection){
+
+    		try {
+				is = new BufferedInputStream(connection.getInputStream());
+				isr = new InputStreamReader(is);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	
+    	public void run(){
+    		
+    		try {
+    			int character;
+        	
+    			while(true){
+        		
+    				StringBuffer process = new StringBuffer();
+    				
+					while((character = isr.read()) != 13) { // ASCII character 13 = CR
+						if(character == -1){
+							connectionClosedSignal.countDown();
+							return;
+						}
+					    process.append((char)character);
+					}
+                
+					System.out.println(process);
+					controller.setControllerbyte(Integer.parseInt(process.toString()));
+        		
+    			}
+    		} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
     }
 }

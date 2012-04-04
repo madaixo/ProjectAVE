@@ -14,10 +14,12 @@ public class SwingAudioImpl implements AudioOutInterface {
 
     private boolean soundEnable;
     private SourceDataLine sdl;
-    private byte[] audiobuf;
-    private int bufptr = 0;
+    protected byte[] audiobuf;
+    protected int bufptr = 0;
     private float outputvol;
-
+    
+    private Server server = null;
+    
     public SwingAudioImpl(final NES nes, final int samplerate) {
         soundEnable = nes.getPrefs().getBoolean("soundEnable", true);
         outputvol = (float) (nes.getPrefs().getInt("outputvol", 13107) / 16384.);
@@ -47,10 +49,13 @@ public class SwingAudioImpl implements AudioOutInterface {
             }
         }
     }
-
+    
     public final void flushFrame(final boolean waitIfBufferFull) {
+    	
+    	if(server != null) server.sendSoundFlush();
+    	
         if (soundEnable) {
-
+        	
 //            if (sdl.available() == sdl.getBufferSize()) {
 //                System.err.println("Audio is underrun");
 //            }
@@ -66,6 +71,7 @@ public class SwingAudioImpl implements AudioOutInterface {
                 sdl.write(audiobuf, 0, bufptr);
             }
         }
+        
         bufptr = 0;
 
     }
@@ -74,6 +80,9 @@ public class SwingAudioImpl implements AudioOutInterface {
 
 
     public final void outputSample(int sample) {
+    	
+    	if(server != null) server.sendSoundSample(sample);
+    	
         if (soundEnable) {
             sample *= outputvol;
             sample += dckiller;
@@ -114,5 +123,9 @@ public class SwingAudioImpl implements AudioOutInterface {
     public final boolean bufferHasLessThan(final int samples) {
         //returns true if the audio buffer has less than the specified amt of samples remaining in it
         return (sdl == null) ? false : ((sdl.getBufferSize() - sdl.available()) <= samples);
+    }
+    
+    public void setServer(Server server){
+    	this.server = server;
     }
 }

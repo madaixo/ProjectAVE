@@ -225,6 +225,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
      * application.
      */
     public void stopEventQueue() {
+    	parent.removeKeyListener(this);
         thread.shutdownNow();
     }
 

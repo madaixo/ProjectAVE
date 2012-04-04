@@ -2,9 +2,8 @@ package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
-import java.util.prefs.Preferences;
 
-import javax.swing.JOptionPane;
+import java.util.prefs.Preferences;
 
 /**
  *
@@ -30,6 +29,7 @@ public class NES {
     // FIXME: TEST
     private Server server;
     private Client client;
+    private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));;
     
     private boolean hostMode = false, clientMode = false;
     private String hostAddress;
@@ -211,7 +211,7 @@ public class NES {
         cpuram = mapper.getCPURAM();
         cpu = mapper.cpu;
         ppu = mapper.ppu;
-        apu = new APU(this, cpu, cpuram);
+        apu = new APU(this, cpu, cpuram, soundDevice);
         cpuram.setAPU(apu);
         cpuram.setPPU(ppu);
         curRomPath = filename;
@@ -341,14 +341,16 @@ public class NES {
         this.setHostPort(hostPort);
     }
     
-    public boolean setHostMode(){
+    public boolean setHostMode(int port){
     	
-    	this.server = new Server(prefs.getInt("HostPort", NES.defaultPort));
+    	this.server = new Server(port);
         if(!server.canBind()){
         	this.server = null;
         	//this.hostMode = false;
-        }else
+        }else{
         	this.hostMode = true;
+        	soundDevice.setServer(this.server);
+        }
         
         return this.hostMode == true;
     }
@@ -360,6 +362,8 @@ public class NES {
     public void networkDisable(){
     	
     	//TODO terminate server or client
+
+    	soundDevice.setServer(null);
     	
     	this.server = null;
     	this.client = null;
@@ -392,8 +396,8 @@ public class NES {
     
     public boolean setClientMode(String hostAddress, int hostPort){
     	
-    	this.client = new Client(hostAddress, hostPort);
-        if(!client.canConnect()) {
+    	this.client = new Client(hostAddress, hostPort, soundDevice);
+        if(!client.openConnection()) {
             this.client = null;
             //this.clientMode = false;
         }else
