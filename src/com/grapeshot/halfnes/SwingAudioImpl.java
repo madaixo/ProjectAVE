@@ -54,7 +54,7 @@ public class SwingAudioImpl implements AudioOutInterface {
 
     public final void flushFrame(final boolean waitIfBufferFull) {
 
-        if(server != null) server.sendSoundFlush();
+        //if(server != null) server.sendSoundFlush();
 
         if (soundEnable) {
 
@@ -83,7 +83,7 @@ public class SwingAudioImpl implements AudioOutInterface {
 
     public final void outputSample(int sample) {
 
-        if(server != null) server.sendSoundSample(sample);
+        //if(server != null) server.sendSoundSample(sample);
 
         if (soundEnable) {
             sample *= outputvol;

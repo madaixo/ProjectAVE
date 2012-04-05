@@ -322,6 +322,7 @@ public class APU {
                 if ((apucycle % cyclespersample) < 1) {
                     //not quite right - there's a non-integer # cycles per sample.
                     ai.outputSample((short) (accum / remainder));
+                    nes.addSample((short) (accum / remainder));
                     remainder = 0;
                     accum = 0;
                 }
@@ -349,6 +350,7 @@ public class APU {
                     }
                     remainder = 0;
                     ai.outputSample(mixvol);
+                    nes.addSample(mixvol);
                 }
                 ++apucycle;
             }

@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.grapeshot.halfnes.AudioOutInterface;
 import com.grapeshot.halfnes.ControllerInterfaceHost;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.network.NetworkPacket.PacketType;
@@ -28,30 +29,14 @@ public abstract class NetworkPeer /* implements Runnable */ {
 
     
     // utility methods
-    public void sendSoundSample(int sample) {
-        NetworkPacket pak = new NetworkPacket(PacketType.AUDIO_SAMPLE);
-        pak.setAudioSample(sample);
-        queue.offer(pak);
-    }
-
-    public void sendSoundFlush() {
-        NetworkPacket pak = new NetworkPacket(PacketType.AUDIO_FLUSH);
-        pak.setAudioSample(0);
-        queue.offer(pak);
-    }
-    
-    public void sendVideoFrame(int[] bitmap, int bgcolor, long frametime) {
-        NetworkPacket pak = new NetworkPacket(PacketType.VIDEO);
-        pak.setVideoBitmap(bitmap);
-        pak.setVideoBgColor(bgcolor);
-        pak.setFrametime(frametime);
-        queue.offer(pak);
-    }
-    
     public void sendControllerByte(int value) {
-        NetworkPacket pak = new NetworkPacket(PacketType.CONTROLLER);
-        pak.setControllerByte(value);
+        ControllerPacket pak = new ControllerPacket(value);
         queue.offer(pak);
+    }
+    
+    public void sendFrame(int[] audio, int[] bitmap, int bgcolor, long frametime){
+    	FramePacket pak = new FramePacket(audio.clone(), bitmap.clone(), bgcolor, frametime);
+    	queue.offer(pak);
     }
     
     public void sendPause() {
@@ -65,8 +50,9 @@ public abstract class NetworkPeer /* implements Runnable */ {
     }
     
     public void sendTitle(String title) {
-        NetworkPacket pak = new NetworkPacket(PacketType.TITLE);
-        pak.setTitle(title);
+        //NetworkPacket pak = new NetworkPacket(PacketType.TITLE);
+        TitlePacket pak = new TitlePacket(title);
+        //pak.setTitle(title);
         queue.offer(pak);
     }
     
@@ -162,21 +148,23 @@ public abstract class NetworkPeer /* implements Runnable */ {
                     packet = (NetworkPacket) isr.readObject();
                     
                     PacketType type = packet.getType();
+
                     switch(type) {
-                    case AUDIO_SAMPLE:
-                        nes.getSoundDevice().outputSample(packet.getAudioSample());
-                        break;
-                    case AUDIO_FLUSH:
-                        nes.getSoundDevice().flushFrame(false);
-                        break;
-                    case VIDEO:
-                        nes.setFrameTime(packet.getFrametime());
-                        nes.getGUI().setFrame(packet.getVideoBitmap(), packet.getVideoBgColor());
-                        break;
+                    case FRAME:
+                    	int[] audioSamples = ((FramePacket) packet).getAudioSamples();
+
+                    	AudioOutInterface ai = nes.getSoundDevice();
+                    	for(int i = 0; i < audioSamples.length; i++)
+                    		ai.outputSample(audioSamples[i]);
+                    	
+                    	ai.flushFrame(false);
+                    	nes.setFrameTime(((FramePacket) packet).getFrametime());
+                        nes.getGUI().setFrame(((FramePacket) packet).getBitmap(), ((FramePacket) packet).getBgcolor());
+                    	break;
                     case CONTROLLER:
                         ControllerInterfaceHost controller = nes.getController2();
                         if(controller != null) {
-                            controller.setControllerbyte(packet.getControllerByte());
+                            controller.setControllerbyte(((ControllerPacket) packet).getControllerByte());
                         }
                         break;
                     case PAUSE:
@@ -186,7 +174,7 @@ public abstract class NetworkPeer /* implements Runnable */ {
                         // TODO: resume a pause emulation session
                         break;
                     case TITLE:
-                        nes.setCurrentRomName(packet.getTitle());
+                        nes.setCurrentRomName(((TitlePacket) packet).getTitle());
                         break;
                     case PING:
                         sendPong();

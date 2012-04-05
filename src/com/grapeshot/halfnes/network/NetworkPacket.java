@@ -7,12 +7,12 @@ public class NetworkPacket implements Serializable {
     private static final long serialVersionUID = 4248012900067896009L;
     private static int idCounter = 0;
 
-    public enum PacketType { VIDEO, AUDIO_SAMPLE, AUDIO_FLUSH, CONTROLLER, PAUSE, RESUME, TITLE, PING, PONG }
-        
+    public enum PacketType { FRAME, CONTROLLER, PAUSE, RESUME, TITLE, PING, PONG }
+    
     private int id;
     private final PacketType type;
     
-    private int[] videoBitmap = null;
+    /*private int[] videoBitmap = null;
     private int videoBgColor = -1;
     private long frametime = -1;
     
@@ -21,7 +21,7 @@ public class NetworkPacket implements Serializable {
     
     private int controllerByte = -1;
     
-    private String title;
+    private String title;*/
     
     
     public NetworkPacket(PacketType type) {
@@ -29,7 +29,7 @@ public class NetworkPacket implements Serializable {
         this.type = type;
     }
 
-    public int[] getVideoBitmap() {
+    /*public int[] getVideoBitmap() {
         return videoBitmap;
     }
 
@@ -75,7 +75,7 @@ public class NetworkPacket implements Serializable {
 
     public void setControllerByte(int controllerByte) {
         this.controllerByte = controllerByte;
-    }
+    }*/
 
     public PacketType getType() {
         return type;
@@ -89,7 +89,7 @@ public class NetworkPacket implements Serializable {
         return id;
     }
 
-    public void setId(int id) {
+    /*public void setId(int id) {
         this.id = id;
     }
 
@@ -99,5 +99,5 @@ public class NetworkPacket implements Serializable {
 
     public void setTitle(String title) {
         this.title = title;
-    }
+    }*/
 }

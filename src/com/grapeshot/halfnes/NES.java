@@ -5,6 +5,7 @@ import com.grapeshot.halfnes.mappers.Mapper;
 import com.grapeshot.halfnes.network.Client;
 import com.grapeshot.halfnes.network.Server;
 
+import java.util.ArrayList;
 import java.util.prefs.Preferences;
 
 /**
@@ -28,6 +29,7 @@ public class NES {
     private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
 
+    private ArrayList<Integer> audioVec = new ArrayList<Integer>();
     private Server server;
     private Client client;
     private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));
@@ -124,6 +126,15 @@ public class NES {
         //on a slow system or when the audio buffer runs dry.
 
         apu.finishframe();
+        int [] audioArray = null;
+        if(hostMode){
+        	audioArray = new int[audioVec.size()];
+        	int i = 0;
+        	for(int sample : audioVec)
+        		audioArray[i++] = sample;
+        	audioVec.clear();
+        }
+        
         cpu.modcycles();
         //active drawing time
         for (int scanline = 0; scanline < 240; ++scanline) {
@@ -156,10 +167,12 @@ public class NES {
         ppu.ppuregs[2] |= 0x80;
         //render the frame
         if(hostMode){
-            // NB TODO: change this to use the new Server 
-            this.server.sendVideoFrame(ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
+            // NB TODO: change this to use the new Server
+            //this.server.sendVideoFrame(ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
+            this.server.sendFrame(audioArray, ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
             // gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
             // gui.getSecondScreen().sendNewFrame();
+            
         }
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
@@ -475,5 +488,9 @@ public class NES {
         } else {
             return null;
         }
+    }
+    
+    public void addSample(int sample){
+    	this.audioVec.add(sample);
     }
 }
