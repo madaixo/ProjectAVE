@@ -6,6 +6,8 @@ package com.grapeshot.halfnes;
 
 import javax.sound.sampled.*;
 
+import com.grapeshot.halfnes.network.Server;
+
 /**
  *
  * @author Andrew
@@ -17,9 +19,9 @@ public class SwingAudioImpl implements AudioOutInterface {
     protected byte[] audiobuf;
     protected int bufptr = 0;
     private float outputvol;
-    
+
     private Server server = null;
-    
+
     public SwingAudioImpl(final NES nes, final int samplerate) {
         soundEnable = nes.getPrefs().getBoolean("soundEnable", true);
         outputvol = (float) (nes.getPrefs().getInt("outputvol", 13107) / 16384.);
@@ -49,18 +51,18 @@ public class SwingAudioImpl implements AudioOutInterface {
             }
         }
     }
-    
+
     public final void flushFrame(final boolean waitIfBufferFull) {
-    	
-    	if(server != null) server.sendSoundFlush();
-    	
+
+        if(server != null) server.sendSoundFlush();
+
         if (soundEnable) {
-        	
-//            if (sdl.available() == sdl.getBufferSize()) {
-//                System.err.println("Audio is underrun");
-//            }
+
+            // if (sdl.available() == sdl.getBufferSize()) {
+            //     System.err.println("Audio is underrun");
+            // }
             if (sdl.available() < bufptr) {
-//                System.err.println("Audio is blocking");
+                // System.err.println("Audio is blocking");
                 if (waitIfBufferFull) {
 
                     //write to audio buffer and don't worry if it blocks
@@ -71,18 +73,18 @@ public class SwingAudioImpl implements AudioOutInterface {
                 sdl.write(audiobuf, 0, bufptr);
             }
         }
-        
+
         bufptr = 0;
 
     }
     int dckiller = 16384;
-    
+
 
 
     public final void outputSample(int sample) {
-    	
-    	if(server != null) server.sendSoundSample(sample);
-    	
+
+        if(server != null) server.sendSoundSample(sample);
+
         if (soundEnable) {
             sample *= outputvol;
             sample += dckiller;
@@ -124,8 +126,8 @@ public class SwingAudioImpl implements AudioOutInterface {
         //returns true if the audio buffer has less than the specified amt of samples remaining in it
         return (sdl == null) ? false : ((sdl.getBufferSize() - sdl.available()) <= samples);
     }
-    
+
     public void setServer(Server server){
-    	this.server = server;
+        this.server = server;
     }
 }

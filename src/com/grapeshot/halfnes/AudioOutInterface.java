@@ -4,6 +4,8 @@
  */
 package com.grapeshot.halfnes;
 
+import com.grapeshot.halfnes.network.Server;
+
 /**
  *
  * @author Andrew

@@ -13,6 +13,7 @@ public class halfNES {
             // ignore
         }
         NES thing = new NES();
+        thing.startGUI();
         
         if (args == null || args.length < 1 || args[0] == null) {
             thing.run();

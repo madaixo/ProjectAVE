@@ -1,28 +1,13 @@
 package com.grapeshot.halfnes;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
-public class ControllerImplHost implements ControllerInterface {
+public class ControllerImplHost implements ControllerInterfaceHost {
     
-    private Server server;
-    private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
     private int latchbyte = 0, controllerbyte = 0, outbyte = 0, gamepadbyte = 0;
     
     public ControllerImplHost() {
-        int port = 18452;
-        this.server = new Server(port, this);
+        // nothing to do
     }
     
-    public ControllerImplHost(int port) {
-        this.server = new Server(port, this);   // port value is correct by the time it gets here
-    }
-    
-    public ControllerImplHost(Server server) {
-        this.server = server;
-        this.server.setController(this);
-    }
-
     public void strobe() {
         //shifts a byte out
         outbyte = latchbyte & 1;
@@ -38,11 +23,11 @@ public class ControllerImplHost implements ControllerInterface {
     }
     
     public void startEventQueue() {
-        thread.execute(this.server);
+        // nothing to do
     }
 
     public void stopEventQueue() {
-        thread.shutdownNow();
+        // nothing to do
     }
     
     public void setGamepadbyte(int value) {

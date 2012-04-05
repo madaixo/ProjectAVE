@@ -15,7 +15,5 @@ public interface GUIInterface extends Runnable{
     public void messageBox(String message);
     public void run();
     public void render();
-    public void setBitmap(int[] bit, int color);
-    public ImageClient getSecondScreen();
     
 }

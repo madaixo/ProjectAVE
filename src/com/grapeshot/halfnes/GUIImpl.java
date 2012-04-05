@@ -7,8 +7,6 @@ import java.awt.image.*;
 import java.awt.datatransfer.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.*;
 
@@ -30,27 +28,15 @@ public class GUIImpl extends JFrame implements GUIInterface {
     final int NES_HEIGHT = 224, NES_WIDTH;
     private Renderer renderer;
     private ControllerInterface padController1, padController2;
-    public int[] bitmap;
-    public int color;
-    public ImageClient mpImage;
-    private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
 
     private JMenu networkMenu = null;
 
     public GUIImpl(NES nes) {
         this.nes = nes;
         screenScaleFactor = nes.getPrefs().getInt("screenScaling", 2);
-        /*if(nes.getHostMode()) {
-            padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
-            padController2 = new ControllerImplHost(nes.getHostPort());
-        } else if(nes.getClientMode()) {
-            padController1 = new ControllerFake();
-            padController2 = new ControllerImplClient(this, nes.getPrefs(), 1, nes.getHostAddress(), nes.getHostPort());
-        } else {*/
-            padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
-            padController2 = new ControllerImpl(this, nes.getPrefs(), 1);
-        //}
-        // FIXME: the implementation above might make it hard to graciously fallback in case of connection problems
+
+        padController1 = new ControllerImpl(this, nes.getPrefs(), 0);
+        padController2 = new ControllerImpl(this, nes.getPrefs(), 1);
         nes.setControllers(padController1, padController2);
         padController1.startEventQueue();
         padController2.startEventQueue();
@@ -77,17 +63,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
         //on Windows it does - on Mac probably not.
         fileDialog.setFilenameFilter(new NESFileFilter());
     }
-
-    // TODO: meh
-    public void setBitmap(int[] bit, int color){
-        this.bitmap = bit;
-        this.color = color;
-    }
-
-    public ImageClient getSecondScreen(){
-        return mpImage;
-    }
-
 
     public synchronized void run() {
         //construct window
@@ -209,15 +184,15 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
         menus.add(nesmenu);
-        
+
         JMenu multiplayer = new JMenu("Network MP");
         // if you change the menu items don't forget to change refreshMultiplayerMenu()
-        
+
         multiplayer.add(item = new JMenuItem("Disable"));
         item.addActionListener(listener);
-        
+
         multiplayer.addSeparator();
-        
+
         multiplayer.add(item = new JMenuItem("Run as Host"));
         item.addActionListener(listener);
 
@@ -289,13 +264,14 @@ public class GUIImpl extends JFrame implements GUIInterface {
     double fps;
     int frameskip = 0;
 
+    int[] tmp = null;
     @Override
     public final synchronized void setFrame(final int[] nextframe, final int bgcolor) {
         //todo: stop running video filters while paused!
         //also move video filters into a worker thread because they
         //don't really depend on emulation state at all. Yes this is going to
         //cause more lag but it will hopefully get back up to playable speed with NTSC filter
-        /*
+
         // TODO: needs some tweaking in order to show the framerate on both server and client
         frametimes[frametimeptr] = nes.getFrameTime();
         ++frametimeptr;
@@ -314,11 +290,11 @@ public class GUIImpl extends JFrame implements GUIInterface {
                     nes.getCurrentRomName(),
                     fps));
         }
-        */
-//        if (nes.framecount % (frameskip + 1) == 0) {
+
+        //        if (nes.framecount % (frameskip + 1) == 0) {
         frame = renderer.render(nextframe, bgcolor);
         render();
-//        }
+        //        }
     }
 
     @Override
@@ -376,16 +352,16 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private int getmaxscale(final int width, final int height) {
         return Math.min(height / NES_HEIGHT, width / NES_WIDTH);
     }
-    
+
     public GUIImpl getThis(){
-    	return this;
+        return this;
     }
-    
+
     public void refreshMultiplayerMenu() {
         JMenuItem disableItem = this.networkMenu.getItem(0);
         JMenuItem hostItem = this.networkMenu.getItem(2);   // pos = 1 is the separator
         JMenuItem clientItem = this.networkMenu.getItem(3);
-        
+
         if(!nes.isNetworkActive()) {
             disableItem.setEnabled(false);
             hostItem.setEnabled(true);
@@ -442,73 +418,63 @@ public class GUIImpl extends JFrame implements GUIInterface {
                     nes.quit();
                 }
             } else if(arg0.getActionCommand().equals("Disable")) {
-                
-            	nes.networkDisable();
-            	
+
+                nes.networkDisable();
+
                 padController1.stopEventQueue();
                 padController2.stopEventQueue();
-                
+
                 padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
                 padController2 = new ControllerImpl(getThis(), nes.getPrefs(), 1);
-            
+
                 nes.setControllers(padController1, padController2);
                 padController1.startEventQueue();
                 padController2.startEventQueue();
-                
+
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Run as Host")) {
-                        
-                // FIXME: this should be moved to NES.class
-                /*Server server = new Server(currentPort);
-                if(!server.canBind()) {
-                	JOptionPane.showMessageDialog(getThis(), "Unable to use port "+currentPort, "Run as Host", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }*/
-            	
-            	String port = String.valueOf(nes.getPrefs().getInt("HostPort", NES.defaultPort));
-            	
-            	do{
-            		port = JOptionPane.showInputDialog(getThis(), "Select a port", port);
-            		
-            		if(port != null){
-            			// TODO: check if valid port
-            			int intport = Integer.parseInt(port);
-            			
-            			if(!nes.setHostMode(intport)){
-                        	JOptionPane.showMessageDialog(getThis(), "Unable to use port "+port, "Run as Host", JOptionPane.ERROR_MESSAGE);
-                        	continue;
+
+                String port = String.valueOf(nes.getPrefs().getInt("HostPort", NES.defaultPort));
+
+                do{
+                    port = JOptionPane.showInputDialog(getThis(), "Select a port", port);
+
+                    if(port != null){
+                        // TODO: check if valid port
+                        int intport = Integer.parseInt(port);
+
+                        if(!nes.setHostMode(intport)){
+                            JOptionPane.showMessageDialog(getThis(), "Unable to use port "+port, "Run as Host", JOptionPane.ERROR_MESSAGE);
+                            continue;
                         }
-            			
-            			padController1.stopEventQueue();
+                        
+                        padController1.stopEventQueue();
                         padController2.stopEventQueue();
 
-                        //nes.setHostMode(true, currentPort);
-
                         padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
-                        padController2 = new ControllerImplHost(nes.getServer());
-                        mpImage = new ImageClient(getThis());
+                        padController2 = new ControllerImplHost();
 
                         nes.setControllers(padController1, padController2);
                         padController1.startEventQueue();
                         padController2.startEventQueue();
-            			
+
                         break;
-            		}
-            	}while(port != null);
-                
+                    }
+                }while(port != null);
+
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Connect to a Host")) {
-                
+
                 String hostAddress = null;
                 String currentAddress = "127.0.0.1:"+NES.defaultPort;
                 String host;
-            	int port;
-                
+                int port;
+
                 do {
                     hostAddress = (String) JOptionPane.showInputDialog(getThis(), "Enter the host's address:", "Connect to a Host", JOptionPane.QUESTION_MESSAGE, null, null, currentAddress);
-                    
+
                     if(hostAddress != null) {
-                        
+
                         int portStartIndex = hostAddress.lastIndexOf(":"); 
 
                         if(portStartIndex != -1) {
@@ -518,30 +484,20 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             host = hostAddress;   
                             port = NES.defaultPort;
                         }
-                        
+
                         if(!nes.setClientMode(host, port)){
                             JOptionPane.showMessageDialog(getThis(), "Unable to connect to "+hostAddress, "Connect to a Host", JOptionPane.ERROR_MESSAGE);
+                            currentAddress = hostAddress;
                             continue;
                         }
-                        
-                        /*nes.setClientMode(true, hostAddress);
-                        
-                        // FIXME: this should be moved to NES.class
-                        Client client = new Client(nes.getHostAddress(), nes.getHostPort());
-                        if(!client.canConnect()) {
-                            JOptionPane.showMessageDialog(getThis(), "Unable to connect to "+hostAddress, "Connect to a Host", JOptionPane.ERROR_MESSAGE);
-                            nes.setClientMode(false);
-                            continue;
-                        }*/
-                        
+
                         /* Configure controllers */
-                        
+
                         padController1.stopEventQueue();
                         padController2.stopEventQueue();
-        
+
                         padController1 = new ControllerFake();
                         padController2 = new ControllerImplClient(getThis(), nes.getPrefs(), 1, nes.getClient());
-                        thread.execute(new ImageServer(getThis()));
 
                         nes.setControllers(padController1, padController2);
                         padController1.startEventQueue();
@@ -549,7 +505,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
                     }
                     break;
                 } while(true);
-               
+
                 refreshMultiplayerMenu();
             }
         }

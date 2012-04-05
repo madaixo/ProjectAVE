@@ -2,6 +2,8 @@ package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
+import com.grapeshot.halfnes.network.Client;
+import com.grapeshot.halfnes.network.Server;
 
 import java.util.prefs.Preferences;
 
@@ -25,11 +27,12 @@ public class NES {
     private String curRomPath, curRomName;
     private GUIInterface gui;
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
-    
+
     private Server server;
     private Client client;
     private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));
-    
+    private Thread serverThread = null;
+
     private boolean hostMode = false, clientMode = false;
     private String hostAddress;
     private int hostPort;
@@ -38,7 +41,7 @@ public class NES {
     public NES() {
         // nothing to do, GUI init moved to startGUI()
     }
-    
+
     public void startGUI() {
         gui = new GUIImpl(this);
         try{
@@ -154,8 +157,9 @@ public class NES {
         //render the frame
         if(hostMode){
             // NB TODO: change this to use the new Server 
-            gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
-            gui.getSecondScreen().sendNewFrame();
+            this.server.sendVideoFrame(ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
+            // gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
+            // gui.getSecondScreen().sendNewFrame();
         }
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {
@@ -229,6 +233,9 @@ public class NES {
         //and start emulation
         cpu.init();
         runEmulation = true;
+
+        if(this.hostMode)
+            this.server.sendTitle(curRomName);
     }
 
     private void saveSRAM(final boolean async) {
@@ -286,6 +293,10 @@ public class NES {
         return frameDoneTime;
     }
 
+    public void setFrameTime(long frametime) {
+        frameDoneTime = frametime;
+    }
+
     public String getrominfo() {
         if (mapper != null) {
             return mapper.getrominfo();
@@ -317,6 +328,10 @@ public class NES {
         return curRomName;
     }
 
+    public void setCurrentRomName(String romName) {
+        curRomName = romName;
+    }
+
     public boolean isFrameLimiterOn() {
         return frameLimiterOn;
     }
@@ -332,59 +347,68 @@ public class NES {
     public ControllerInterface getcontroller2() {
         return controller2;
     }
-    
-    
-    
+
+
+
     public void setHostMode(boolean hostMode) {
         this.hostMode = hostMode;
         this.hostPort = defaultPort;
     }
-    
+
     public void setHostMode(boolean hostMode, int hostPort) {
         this.hostMode = hostMode;
         this.setHostPort(hostPort);
     }
-    
+
     public boolean setHostMode(int port){
-    	
-    	this.server = new Server(port);
+
+        this.server = new Server(port, this);
         if(!server.canBind()){
-        	this.server = null;
-        	//this.hostMode = false;
+            this.server = null;
+            //this.hostMode = false;
         }else{
-        	this.hostMode = true;
-        	soundDevice.setServer(this.server);
+            this.hostMode = true;
+            soundDevice.setServer(this.server);
         }
-        
+
+        serverThread = new Thread(this.server);
+        serverThread.start();
+
         return this.hostMode == true;
     }
-    
-    public Server getServer(){
-    	return this.server;
-    }
-    
-    public void networkDisable(){
-    	
-    	//TODO terminate server or client
 
-    	soundDevice.setServer(null);
-    	
-    	this.server = null;
-    	this.client = null;
-    	
-    	this.hostMode = false;
-    	this.clientMode = false;
+    public Server getServer(){
+        return this.server;
     }
-    
+
+    public void networkDisable(){
+
+        //TODO terminate server or client
+
+        if(this.hostMode) {
+            this.server.closeSocket();
+            this.serverThread.interrupt();
+            this.serverThread = null;
+        }
+
+        soundDevice.setServer(null);
+
+        this.server = null;
+        this.client = null;
+
+        this.hostMode = false;
+        this.clientMode = false;
+    }
+
     public boolean getHostMode() {
         return this.hostMode;
     }
-    
+
     public void setHostPort(int port) {
         this.hostPort = port;
         // TODO: enforce a port number between 10000 and 65535. Possibly check if port is bindable.
     }
-    
+
     public int getHostPort() {
         return this.hostPort;
     }
@@ -397,27 +421,27 @@ public class NES {
         this.clientMode = clientMode;
         this.setHostAddress(hostAddress);
     }
-    
+
     public boolean setClientMode(String hostAddress, int hostPort){
-    	
-    	this.client = new Client(hostAddress, hostPort, soundDevice);
+
+        this.client = new Client(hostAddress, hostPort, this);
         if(!client.openConnection()) {
             this.client = null;
             //this.clientMode = false;
         }else
-        	this.clientMode = true;
-        
+            this.clientMode = true;
+
         return this.clientMode == true;
     }
-    
+
     public Client getClient(){
-    	return this.client;
+        return this.client;
     }
-    
+
     public boolean getClientMode() {
         return this.clientMode;
     }
-    
+
     public void setHostAddress(String hostAddress) {
         int portStartIndex = hostAddress.lastIndexOf(":"); 
         if(portStartIndex != -1) {
@@ -428,12 +452,28 @@ public class NES {
             this.hostPort = defaultPort;
         }
     }
-    
+
     public String getHostAddress() {
         return this.hostAddress;
     }
-    
+
     public boolean isNetworkActive() {
         return (this.hostMode || this.clientMode);
+    }
+
+    public AudioOutInterface getSoundDevice() {
+        return this.soundDevice;
+    }
+
+    public GUIInterface getGUI() {
+        return this.gui;
+    }
+
+    public ControllerInterfaceHost getController2() {
+        if(this.controller2 instanceof ControllerImplHost) {
+            return (ControllerInterfaceHost) this.controller2;
+        } else {
+            return null;
+        }
     }
 }

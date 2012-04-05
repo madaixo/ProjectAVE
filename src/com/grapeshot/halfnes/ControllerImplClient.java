@@ -3,6 +3,8 @@ package com.grapeshot.halfnes;
 import java.awt.event.KeyEvent;
 import java.util.prefs.Preferences;
 
+import com.grapeshot.halfnes.network.Client;
+
 public class ControllerImplClient extends ControllerImpl {
 
     private Client client;
@@ -15,13 +17,13 @@ public class ControllerImplClient extends ControllerImpl {
     @Override
     public void keyPressed(final KeyEvent arg0) {
         super.keyPressed(arg0);
-        this.client.sendControllerbyte(this.controllerbyte);
+        this.client.sendControllerByte(this.controllerbyte);
     }
 
     @Override
     public void keyReleased(final KeyEvent arg0) {
         super.keyReleased(arg0);
-        this.client.sendControllerbyte(this.controllerbyte);
+        this.client.sendControllerByte(this.controllerbyte);
     }
     
     public void setControllerbyte(int value) {
