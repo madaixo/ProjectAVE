@@ -8,7 +8,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
-
 import com.grapeshot.halfnes.AudioOutInterface;
 import com.grapeshot.halfnes.ControllerInterfaceHost;
 import com.grapeshot.halfnes.NES;
@@ -74,6 +73,8 @@ public abstract class NetworkPeer /* implements Runnable */ {
         BufferedOutputStream bos;
         ObjectOutputStream osw;
         
+        CompressedBlockOutputStream compressed;
+        
         public Writer() {}
         
         public Writer(Socket connection) {
@@ -82,7 +83,9 @@ public abstract class NetworkPeer /* implements Runnable */ {
         
         public Writer initConnection(Socket connection) {
             try {
-                bos = new BufferedOutputStream(connection.getOutputStream());
+            	compressed = new CompressedBlockOutputStream(connection.getOutputStream(), 1024);
+                //bos = new BufferedOutputStream(connection.getOutputStream());
+            	bos = new BufferedOutputStream(compressed);
                 return this;
             } catch (IOException e) {
                 // TODO Auto-generated catch block
@@ -124,6 +127,7 @@ public abstract class NetworkPeer /* implements Runnable */ {
 
         private BufferedInputStream is;
         private ObjectInputStream isr;
+        private CompressedBlockInputStream compressed;
 
         public Reader() {}
         
@@ -133,7 +137,9 @@ public abstract class NetworkPeer /* implements Runnable */ {
         
         public Reader initConnection(Socket connection) {
             try {
-                is = new BufferedInputStream(connection.getInputStream());
+            	compressed = new CompressedBlockInputStream(connection.getInputStream());
+                //is = new BufferedInputStream(connection.getInputStream());
+                is = new BufferedInputStream(compressed);
                 return this;
             } catch (IOException e) {
                 // TODO Auto-generated catch block
