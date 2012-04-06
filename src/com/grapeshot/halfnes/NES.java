@@ -167,12 +167,7 @@ public class NES {
         ppu.ppuregs[2] |= 0x80;
         //render the frame
         if(hostMode){
-            // NB TODO: change this to use the new Server
-            //this.server.sendVideoFrame(ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
             this.server.sendFrame(audioArray, ppu.getBitmap(), ppu.bgcolor, this.getFrameTime());
-            // gui.setBitmap(ppu.getBitmap(), ppu.bgcolor);
-            // gui.getSecondScreen().sendNewFrame();
-            
         }
         ppu.renderFrame(gui);
         if ((framecount & 2047) == 0) {

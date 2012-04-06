@@ -272,7 +272,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
         //don't really depend on emulation state at all. Yes this is going to
         //cause more lag but it will hopefully get back up to playable speed with NTSC filter
 
-        // TODO: needs some tweaking in order to show the framerate on both server and client
         frametimes[frametimeptr] = nes.getFrameTime();
         ++frametimeptr;
         frametimeptr %= frametimes.length;
