@@ -7,9 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import com.grapeshot.halfnes.AudioOutInterface;
 import com.grapeshot.halfnes.ControllerInterfaceHost;
 import com.grapeshot.halfnes.NES;
@@ -18,7 +15,8 @@ import com.grapeshot.halfnes.network.NetworkPacket.PacketType;
 public abstract class NetworkPeer /* implements Runnable */ {
     
     protected NES nes = null;
-    BlockingQueue<NetworkPacket> queue = new LinkedBlockingQueue<NetworkPacket>();
+    private CircularQueue<NetworkPacket> queue = new CircularQueue<NetworkPacket>(10);
+    //BlockingQueue<NetworkPacket> queue = new LinkedBlockingQueue<NetworkPacket>();
     //BlockingQueue<NetworkPacket> queue = new ArrayBlockingQueue<NetworkPacket>(10);
     Reader reader = null;
     Writer writer = null;

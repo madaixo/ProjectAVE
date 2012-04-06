@@ -465,7 +465,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
             } else if(arg0.getActionCommand().equals("Connect to a Host")) {
 
                 String hostAddress = null;
-                String currentAddress = "127.0.0.1:"+NES.defaultPort;
+                
+                String currentAddress = nes.getPrefs().get("lastHost", "127.0.0.1:"+NES.defaultPort);
                 String host;
                 int port;
 
@@ -489,6 +490,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             currentAddress = hostAddress;
                             continue;
                         }
+                        
+                        nes.getPrefs().put("lastHost", hostAddress);
 
                         /* Configure controllers */
 
