@@ -19,6 +19,7 @@ public abstract class NetworkPeer /* implements Runnable */ {
     
     protected NES nes = null;
     BlockingQueue<NetworkPacket> queue = new LinkedBlockingQueue<NetworkPacket>();
+    //BlockingQueue<NetworkPacket> queue = new ArrayBlockingQueue<NetworkPacket>(10);
     Reader reader = null;
     Writer writer = null;
 
@@ -102,10 +103,13 @@ public abstract class NetworkPeer /* implements Runnable */ {
             while(true) {
                 try {
                     send = queue.take();
+                    //if(nes.getHostMode()) System.out.println(queue.size());
                     osw.writeObject(send);
-                    osw.flush(); 
+                    osw.flush();
+                    osw.reset();
                 } catch (SocketException e) {
                     // TODO: warn there might have been a disconnect (could only be temporary)
+                	System.out.println("erro?");
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
