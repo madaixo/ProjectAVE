@@ -10,7 +10,6 @@ import com.grapeshot.halfnes.NES;
 public class Server extends NetworkPeer implements Runnable {
 
     private ServerSocket socket1 = null;
-    private CountDownLatch connectionClosedSignal = new CountDownLatch(1);
     
     private int port = 0;
     
@@ -44,30 +43,47 @@ public class Server extends NetworkPeer implements Runnable {
     public void run() {
         Socket connection = null;
 
-        try {
-            if(this.socket1 == null) {
-                this.socket1 = new ServerSocket(this.port);
-            }
-
-            while(true) {
-                connection = socket1.accept();
-                reader.initConnection(connection).start();
-                writer.initConnection(connection).start();
-
-                try {
-                    connectionClosedSignal.await();
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                writer.interrupt();
-                reader.interrupt();
-            }
+        if(this.socket1 == null) {
+        	try {
+				this.socket1 = new ServerSocket(this.port);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
-        catch (IOException e) {
-            // TODO: handle it
-            e.printStackTrace();
+         
+
+        while(true) {
+        	try {
+				connection = socket1.accept();
+			} catch (IOException e1) {
+				return;
+			}
+        	
+        	connectionClosedSignal = new CountDownLatch(1);
+        	
+        	reader = new Reader();
+        	writer = new Writer();
+        	
+            reader.initConnection(connection).start();
+            writer.initConnection(connection).start();
+
+
+            try {
+                    connectionClosedSignal.await();
+            } catch (InterruptedException e) {
+            	// TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+                
+            writer.interrupt();
+
+            try {
+            	connection.close();
+            } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+            }
         }
     }
 }

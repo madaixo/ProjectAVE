@@ -27,7 +27,7 @@ public class ControllerImpl implements ControllerInterface, KeyListener {
     private final Component[] buttons;
     private final ScheduledExecutorService thread = Executors.newSingleThreadScheduledExecutor();
     protected int latchbyte = 0, controllerbyte = 0, prevbyte = 0, outbyte = 0, gamepadbyte = 0;
-    private final HashMap<Integer, Integer> m = new HashMap<Integer, Integer>(10);
+    protected final HashMap<Integer, Integer> m = new HashMap<Integer, Integer>(10);
 
     public ControllerImpl(final java.awt.Component parent, final Preferences prefs, final int controllernum) {
         if (parent == null) {

@@ -7,6 +7,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
+
 import com.grapeshot.halfnes.AudioOutInterface;
 import com.grapeshot.halfnes.ControllerInterfaceHost;
 import com.grapeshot.halfnes.NES;
@@ -18,8 +20,9 @@ public abstract class NetworkPeer /* implements Runnable */ {
     private CircularQueue<NetworkPacket> queue = new CircularQueue<NetworkPacket>(10);
     //BlockingQueue<NetworkPacket> queue = new LinkedBlockingQueue<NetworkPacket>();
     //BlockingQueue<NetworkPacket> queue = new ArrayBlockingQueue<NetworkPacket>(10);
-    Reader reader = null;
-    Writer writer = null;
+    protected CountDownLatch connectionClosedSignal = new CountDownLatch(1);
+    protected Reader reader = null;
+    protected Writer writer = null;
 
     public NetworkPeer() {
         this.reader = new Reader();
@@ -109,8 +112,7 @@ public abstract class NetworkPeer /* implements Runnable */ {
                     // TODO: warn there might have been a disconnect (could only be temporary)
                 	System.out.println("erro?");
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    return;
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -187,6 +189,7 @@ public abstract class NetworkPeer /* implements Runnable */ {
                 }
             } catch (IOException e) {
                 // FIXME: ver se funciona
+            	connectionClosedSignal.countDown();
                 return;
             } catch (ClassNotFoundException e) {
                 // TODO Auto-generated catch block

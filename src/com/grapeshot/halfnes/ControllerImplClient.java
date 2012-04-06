@@ -17,13 +17,17 @@ public class ControllerImplClient extends ControllerImpl {
     @Override
     public void keyPressed(final KeyEvent arg0) {
         super.keyPressed(arg0);
-        this.client.sendControllerByte(this.controllerbyte);
+        if (m.containsKey(arg0.getKeyCode())) {
+        	this.client.sendControllerByte(this.controllerbyte);
+        }
     }
 
     @Override
     public void keyReleased(final KeyEvent arg0) {
         super.keyReleased(arg0);
-        this.client.sendControllerByte(this.controllerbyte);
+        if (m.containsKey(arg0.getKeyCode())) {
+        	this.client.sendControllerByte(this.controllerbyte);
+        }
     }
     
     public void setControllerbyte(int value) {
