@@ -130,4 +130,9 @@ public class SwingAudioImpl implements AudioOutInterface {
     public void setServer(KryoServer server){
         this.server = server;
     }
+
+    @Override
+    public boolean isSoundEnabled() {
+        return this.soundEnable;
+    }
 }

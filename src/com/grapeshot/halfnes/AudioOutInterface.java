@@ -25,4 +25,6 @@ public interface AudioOutInterface {
     public boolean bufferHasLessThan(int samples);
     
     public void setServer(KryoServer server);
+    
+    public boolean isSoundEnabled();
 }

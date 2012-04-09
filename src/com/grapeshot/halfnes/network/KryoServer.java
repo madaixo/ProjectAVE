@@ -89,10 +89,12 @@ public class KryoServer {
         pak.id = NetworkCommon.getNextId();
         this.send(pak);
         
-        AudioMessage pak2 = new AudioMessage();
-        pak2.buffer = audio;
-        pak2.id = NetworkCommon.getNextId();  
-        this.send(pak2);
+        if(nes.getSoundDevice().isSoundEnabled()) {
+            AudioMessage pak2 = new AudioMessage();
+            pak2.buffer = audio;
+            pak2.id = NetworkCommon.getNextId();  
+            this.send(pak2);
+        }
     }
 
     public void sendTitle(String title) {
