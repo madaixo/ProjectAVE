@@ -2,7 +2,6 @@ package com.grapeshot.halfnes.network;
 
 import java.io.IOException;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Client;
@@ -11,7 +10,10 @@ import com.esotericsoftware.minlog.Log;
 import com.grapeshot.halfnes.AudioOutInterface;
 import com.grapeshot.halfnes.ControllerInterfaceHost;
 import com.grapeshot.halfnes.NES;
-import com.grapeshot.halfnes.network.NetworkPacket.PacketType;
+import com.grapeshot.halfnes.network.NetworkCommon.AudioMessage;
+import com.grapeshot.halfnes.network.NetworkCommon.ControllerMessage;
+import com.grapeshot.halfnes.network.NetworkCommon.TitleMessage;
+import com.grapeshot.halfnes.network.NetworkCommon.VideoMessage;
 
 
 public class KryoClient {
@@ -20,7 +22,8 @@ public class KryoClient {
     private int port = 0;
     private String hostAddress = null;
     private NES nes = null;
-    private int connectionId = -1;
+    private int connectionId = -1;    
+    private long videoId = -1, audioId = -1, controllerId = -1;
     
     public KryoClient(String hostAddress, int port, NES nes) {
         Log.DEBUG();
@@ -32,57 +35,46 @@ public class KryoClient {
         this.hostAddress = hostAddress;
 
         // register to-be-serialized classes in Kryo
-        Kryo kryo = client.getKryo();
-        kryo.register(NetworkPacket.class);
-        kryo.register(FramePacket.class);
-        kryo.register(TitlePacket.class);
-        kryo.register(ControllerPacket.class);
-        kryo.register(NetworkPacket.PacketType.class);
-        kryo.register(int[].class);
+        NetworkCommon.register(client);
         
         // add listeners to server
         client.addListener(new Listener() {
             public void received (Connection connection, Object object) {
-                // all received or sent objects are NetworkPackets except KryoNet keep-alive packets and such
-                if (object instanceof NetworkPacket) {
-                    NetworkPacket packet = (NetworkPacket) object;
-                    PacketType type = packet.getType();
-    
-                    NES nes = getNES();
-    
-                    switch(type) {
-                    case FRAME:
-                        int[] audioSamples = ((FramePacket) packet).getAudioSamples();
-    
+                NES nes = getNES();
+
+                if (object instanceof ControllerMessage) {
+                    ControllerMessage packet = (ControllerMessage) object;
+                    if(packet.id > controllerId) {
+                        ControllerInterfaceHost controller = nes.getController2();
+                        if(controller != null) {
+                            controller.setControllerbyte(packet.controllerByte);
+                        }
+                    }
+                }
+
+                if (object instanceof VideoMessage) {
+                    VideoMessage packet = (VideoMessage) object;
+                    if(packet.id > videoId) {
+                        nes.setFrameTime(packet.frametime);
+                        nes.getGUI().setFrame(packet.bitmap, packet.background);
+                    }
+                }
+
+                if (object instanceof AudioMessage) {
+                    AudioMessage packet = (AudioMessage) object;
+                    if(packet.id > audioId) {
+                        int[] audioSamples = packet.buffer; 
+
                         AudioOutInterface ai = nes.getSoundDevice();
                         for(int i = 0; i < audioSamples.length; i++)
                             ai.outputSample(audioSamples[i]);
-    
+
                         ai.flushFrame(false);
-                        nes.setFrameTime(((FramePacket) packet).getFrametime());
-                        nes.getGUI().setFrame(((FramePacket) packet).getBitmap(), ((FramePacket) packet).getBgcolor());
-                        break;
-                    case CONTROLLER:
-                        ControllerInterfaceHost controller = nes.getController2();
-                        if(controller != null) {
-                            controller.setControllerbyte(((ControllerPacket) packet).getControllerByte());
-                        }
-                        break;
-                    case PAUSE:
-                        // TODO: emulation is paused for some reason, stop emulation and show a message
-                        break;
-                    case RESUME:
-                        // TODO: resume a pause emulation session
-                        break;
-                    case TITLE:
-                        nes.setCurrentRomName(((TitlePacket) packet).getTitle());
-                        break;
-                    case PING:
-                        sendPong();
-                        break;
-                    default:
-                        break;
                     }
+                } 
+
+                if (object instanceof TitleMessage) {
+                    nes.setCurrentRomName(((TitleMessage) object).title);
                 }
             }
 
@@ -93,12 +85,11 @@ public class KryoClient {
             
             public void connected(Connection c) {
                 setConnectionId(c.getID());
-                sendPing();
             }
         });
         
         try {
-            this.client.connect(5000, this.hostAddress, this.port);
+            this.client.connect(5000, this.hostAddress, this.port, this.port+1);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -142,43 +133,36 @@ public class KryoClient {
         this.client.stop();
     }
 
-    public void send(NetworkPacket packet) {
-        this.client.sendTCP(packet);
+    public void send(Object packet) {
+        client.sendUDP(packet);
     }
-    
+
     // utility methods
     public void sendControllerByte(int value) {
-        ControllerPacket pak = new ControllerPacket(value);
+        ControllerMessage pak = new ControllerMessage();
+        pak.controllerByte = value;
+        pak.id = NetworkCommon.getNextId();
         this.send(pak);
     }
 
-    public void sendFrame(int[] audio, int[] bitmap, int bgcolor, long frametime){
-        FramePacket pak = new FramePacket(audio.clone(), bitmap.clone(), bgcolor, frametime);
+    public void sendFrame(int[] audio, int[] bitmap, int bgcolor, long frametime) {
+        VideoMessage pak = new VideoMessage();
+        pak.bitmap = bitmap;
+        pak.background = bgcolor;
+        pak.frametime = frametime;
+        pak.id = NetworkCommon.getNextId();
         this.send(pak);
-    }
-
-    public void sendPause() {
-        NetworkPacket pak = new NetworkPacket(PacketType.PAUSE);
-        this.send(pak);
-    }
-
-    public void sendResume() {
-        NetworkPacket pak = new NetworkPacket(PacketType.RESUME);
-        this.send(pak);
+        
+        AudioMessage pak2 = new AudioMessage();
+        pak2.buffer = audio;
+        pak2.id = NetworkCommon.getNextId();  
+        this.send(pak2);
     }
 
     public void sendTitle(String title) {
-        TitlePacket pak = new TitlePacket(title);
-        this.send(pak);
-    }
-
-    public void sendPing() {
-        NetworkPacket pak = new NetworkPacket(PacketType.PING);
-        this.send(pak);
-    }
-
-    public void sendPong() {
-        NetworkPacket pak = new NetworkPacket(PacketType.PONG);
+        TitleMessage pak = new TitleMessage();
+        pak.title = title;
+        pak.id = NetworkCommon.getNextId();
         this.send(pak);
     }
 }
