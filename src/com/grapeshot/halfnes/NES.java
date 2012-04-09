@@ -2,8 +2,8 @@ package com.grapeshot.halfnes;
 
 import com.grapeshot.halfnes.mappers.BadMapperException;
 import com.grapeshot.halfnes.mappers.Mapper;
-import com.grapeshot.halfnes.network.Client;
-import com.grapeshot.halfnes.network.Server;
+import com.grapeshot.halfnes.network.KryoClient;
+import com.grapeshot.halfnes.network.KryoServer;
 
 import java.util.ArrayList;
 import java.util.prefs.Preferences;
@@ -30,8 +30,8 @@ public class NES {
     private FrameLimiterInterface limiter = new FrameLimiterImpl(this);
 
     private ArrayList<Integer> audioVec = new ArrayList<Integer>();
-    private Server server;
-    private Client client;
+    private KryoServer server;
+    private KryoClient client;
     private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));
     private Thread serverThread = null;
 
@@ -370,22 +370,19 @@ public class NES {
 
     public boolean setHostMode(int port){
 
-        this.server = new Server(port, this);
+        this.server = new KryoServer(port, this);
         if(!server.canBind()){
             this.server = null;
             //this.hostMode = false;
-        }else{
+        } else {
             this.hostMode = true;
             soundDevice.setServer(this.server);
         }
 
-        serverThread = new Thread(this.server);
-        serverThread.start();
-
         return this.hostMode == true;
     }
 
-    public Server getServer(){
+    public KryoServer getServer(){
         return this.server;
     }
 
@@ -432,7 +429,7 @@ public class NES {
 
     public boolean setClientMode(String hostAddress, int hostPort){
 
-        this.client = new Client(hostAddress, hostPort, this);
+        this.client = new KryoClient(hostAddress, hostPort, this);
         if(!client.openConnection()) {
             this.client = null;
             //this.clientMode = false;
@@ -442,7 +439,7 @@ public class NES {
         return this.clientMode == true;
     }
 
-    public Client getClient(){
+    public KryoClient getClient(){
         return this.client;
     }
 

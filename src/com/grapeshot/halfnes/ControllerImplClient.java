@@ -3,13 +3,13 @@ package com.grapeshot.halfnes;
 import java.awt.event.KeyEvent;
 import java.util.prefs.Preferences;
 
-import com.grapeshot.halfnes.network.Client;
+import com.grapeshot.halfnes.network.KryoClient;
 
 public class ControllerImplClient extends ControllerImpl {
 
-    private Client client;
+    private KryoClient client;
     
-    public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, Client client) {
+    public ControllerImplClient(final java.awt.Component parent, final Preferences prefs, final int controllernum, KryoClient client) {
         super(parent, prefs, controllernum);
         this.client = client;
     }

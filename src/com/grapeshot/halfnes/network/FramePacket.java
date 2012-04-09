@@ -9,6 +9,8 @@ public class FramePacket extends NetworkPacket {
     int bgcolor;
     long frametime;
 
+    public FramePacket() {}
+    
     public FramePacket(int[] audioSamples, int[] bitmap, int bgcolor, long frametime) {
         super(PacketType.FRAME);
         this.audioSamples = audioSamples;

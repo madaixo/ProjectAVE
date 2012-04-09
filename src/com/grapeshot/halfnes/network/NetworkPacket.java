@@ -10,10 +10,18 @@ public class NetworkPacket implements Serializable {
     public enum PacketType { FRAME, CONTROLLER, PAUSE, RESUME, TITLE, PING, PONG }
     
     private int id;
-    private final PacketType type;
+    private PacketType type;
+    
+    public NetworkPacket() {
+        id = NetworkPacket.getNextId();
+    }
     
     public NetworkPacket(PacketType type) {
         id = NetworkPacket.getNextId();
+        this.type = type;
+    }
+
+    public void setType(PacketType type) {
         this.type = type;
     }
 

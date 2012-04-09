@@ -6,6 +6,8 @@ public class TitlePacket extends NetworkPacket{
 
     private String title;
 
+    public TitlePacket() {}
+    
     public TitlePacket(String title){
         super(PacketType.TITLE);
         this.title = title;
@@ -13,5 +15,9 @@ public class TitlePacket extends NetworkPacket{
 
     public String getTitle(){
         return this.title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

@@ -4,7 +4,7 @@
  */
 package com.grapeshot.halfnes;
 
-import com.grapeshot.halfnes.network.Server;
+import com.grapeshot.halfnes.network.KryoServer;
 
 /**
  *
@@ -24,5 +24,5 @@ public interface AudioOutInterface {
 
     public boolean bufferHasLessThan(int samples);
     
-    public void setServer(Server server);
+    public void setServer(KryoServer server);
 }

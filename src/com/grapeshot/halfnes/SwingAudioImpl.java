@@ -6,7 +6,7 @@ package com.grapeshot.halfnes;
 
 import javax.sound.sampled.*;
 
-import com.grapeshot.halfnes.network.Server;
+import com.grapeshot.halfnes.network.KryoServer;
 
 /**
  *
@@ -20,7 +20,7 @@ public class SwingAudioImpl implements AudioOutInterface {
     protected int bufptr = 0;
     private float outputvol;
 
-    private Server server = null;
+    private KryoServer server = null;
 
     public SwingAudioImpl(final NES nes, final int samplerate) {
         soundEnable = nes.getPrefs().getBoolean("soundEnable", true);
@@ -127,7 +127,7 @@ public class SwingAudioImpl implements AudioOutInterface {
         return (sdl == null) ? false : ((sdl.getBufferSize() - sdl.available()) <= samples);
     }
 
-    public void setServer(Server server){
+    public void setServer(KryoServer server){
         this.server = server;
     }
 }
