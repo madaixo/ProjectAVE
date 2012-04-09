@@ -17,6 +17,8 @@ public class KryoClient {
     private NES nes = null;
     private int connectionId = -1;
     
+    private boolean stopReconnect = false;
+    
     public KryoClient(String hostAddress, int port, NES nes) {
         Log.DEBUG();
         this.client = new Client(65536, 65536);
@@ -39,15 +41,6 @@ public class KryoClient {
         client.addListener(new ListenerClientController(this));
         clientVideo.addListener(new ListenerClientVideo(this));
         clientAudio.addListener(new ListenerClientAudio(this));
-        
-        try {
-            this.client.connect(5000, this.hostAddress, this.port, this.port+1);
-            this.clientVideo.connect(5000, this.hostAddress, this.port+10, this.port+11);
-            this.clientAudio.connect(5000, this.hostAddress, this.port+20, this.port+21);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
     
     public NES getNES() {
@@ -71,20 +64,59 @@ public class KryoClient {
     }
     
     public boolean openConnection() {
-        return true;
-        /*
+        // TODO: choose more sane ports. Try to use random ports for video and audio, ask server.
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                nes.getGUI().showConnecting();
+            }
+        });
         try {
-            this.client.connect(5000, this.hostAddress, this.port);
+            this.client.connect(5000, this.hostAddress, this.port, this.port+1);
+            this.clientVideo.connect(5000, this.hostAddress, this.port+10, this.port+11);
+            this.clientAudio.connect(5000, this.hostAddress, this.port+20, this.port+21);
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    nes.getGUI().hideDialog();
+                }
+            });
             return true;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             return false;
         }
-        */
     }
 
     public void closeConnection() {
+        this.stopReconnect = true;  
         this.client.stop();
+        this.clientAudio.stop();
+        this.clientVideo.stop();
+    }
+    
+    public void retryConnection() {
+        while(!stopReconnect) {
+            try {
+                this.clientVideo.connect(5000, this.hostAddress, this.port+10, this.port+11);
+                this.clientAudio.connect(5000, this.hostAddress, this.port+20, this.port+21);
+                this.client.connect(5000, this.hostAddress, this.port, this.port+1);
+                break;
+            } catch (IOException e) {
+                this.clientVideo.close();
+                this.clientAudio.close();
+                this.client.close();
+            }
+            
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                continue;
+            }
+        }
+        
+        stopReconnect = false;
+    }
+    
+    public void setStopReconnect(boolean val) {
+        this.stopReconnect = val;
     }
 
     public void send(ControllerMessage packet) {

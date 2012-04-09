@@ -16,4 +16,10 @@ public interface GUIInterface extends Runnable{
     public void run();
     public void render();
     
+    public void showWaitingForClient();
+    public void showConnecting();
+    public void showServerDisconnected();
+    public void showClientDisconnected();
+    
+    public void hideDialog();
 }

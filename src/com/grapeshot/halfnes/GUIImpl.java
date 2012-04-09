@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class GUIImpl extends JFrame implements GUIInterface {
 
@@ -30,6 +31,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private ControllerInterface padController1, padController2;
 
     private JMenu networkMenu = null;
+    private JDialog connectionDialog = null;
 
     public GUIImpl(NES nes) {
         this.nes = nes;
@@ -420,21 +422,11 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
                 nes.networkDisable();
 
-                padController1.stopEventQueue();
-                padController2.stopEventQueue();
-
-                padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
-                padController2 = new ControllerImpl(getThis(), nes.getPrefs(), 1);
-
-                nes.setControllers(padController1, padController2);
-                padController1.startEventQueue();
-                padController2.startEventQueue();
-
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Run as Host")) {
 
                 String port = String.valueOf(nes.getPrefs().getInt("HostPort", NES.defaultPort));
-
+                
                 do{
                     port = JOptionPane.showInputDialog(getThis(), "Select a port", port);
 
@@ -447,25 +439,17 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             continue;
                         }
                         
-                        padController1.stopEventQueue();
-                        padController2.stopEventQueue();
-
-                        padController1 = new ControllerImpl(getThis(), nes.getPrefs(), 0);
-                        padController2 = new ControllerImplHost();
-
-                        nes.setControllers(padController1, padController2);
-                        padController1.startEventQueue();
-                        padController2.startEventQueue();
-
+                        // nes.pause();
+                        showWaitingForClient();
                         break;
                     }
-                }while(port != null);
-
+                } while(port != null);
+                
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Connect to a Host")) {
 
                 String hostAddress = null;
-                
+
                 String currentAddress = nes.getPrefs().get("lastHost", "127.0.0.1:"+NES.defaultPort);
                 String host;
                 int port;
@@ -490,20 +474,8 @@ public class GUIImpl extends JFrame implements GUIInterface {
                             currentAddress = hostAddress;
                             continue;
                         }
-                        
+
                         nes.getPrefs().put("lastHost", hostAddress);
-
-                        /* Configure controllers */
-
-                        padController1.stopEventQueue();
-                        padController2.stopEventQueue();
-
-                        padController1 = new ControllerFake();
-                        padController2 = new ControllerImplClient(getThis(), nes.getPrefs(), 1, nes.getClient());
-
-                        nes.setControllers(padController1, padController2);
-                        padController1.startEventQueue();
-                        padController2.startEventQueue();
                     }
                     break;
                 } while(true);
@@ -522,7 +494,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
             padController1.stopEventQueue();
             padController2.stopEventQueue();
             nes.quit();
-
         }
 
         @Override
@@ -546,6 +517,111 @@ public class GUIImpl extends JFrame implements GUIInterface {
 
         @Override
         public void windowDeactivated(WindowEvent e) {
+        }
+    }
+
+    public void showWaitingForClient() {
+        nes.pause();
+        connectionDialog = new ConnectionDialog("host", this);
+        connectionDialog.pack();
+        connectionDialog.setLocationRelativeTo(this);
+        connectionDialog.setVisible(true);
+        nes.resume();
+    }
+    
+    public void showConnecting() {
+        connectionDialog = new ConnectionDialog("client", this);
+        connectionDialog.pack();
+        connectionDialog.setLocationRelativeTo(this);
+        connectionDialog.setVisible(true);
+    }
+    
+    public void showServerDisconnected() {
+        connectionDialog = new ConnectionDialog("client_disconnect", this);
+        connectionDialog.pack();
+        connectionDialog.setLocationRelativeTo(this);
+        connectionDialog.setVisible(true);
+    }
+    
+    public void showClientDisconnected() {
+        nes.pause();
+        connectionDialog = new ConnectionDialog("host_disconnect", this);
+        connectionDialog.pack();
+        connectionDialog.setLocationRelativeTo(this);
+        connectionDialog.setVisible(true);
+        nes.resume();
+    }
+
+    public void hideDialog() {
+        connectionDialog.dispose();
+    }
+
+    public class ConnectionDialog extends JDialog {
+
+        private static final long serialVersionUID = -1650205666257364869L;
+        
+        
+        public ConnectionDialog(String type, JFrame parent) {
+            super(parent, true);
+            
+            String title = null, label = null;
+            if(type.equals("host")) {
+                title = "Run as Host";
+                label = "Waiting for connection from a client...";
+            } else if(type.equals("client")) {
+                title = "Connect to a Host";
+                label = "Connecting...";
+            } else if(type.equals("host_disconnect")) {
+                title = "Run as Host";
+                label = "Client disconnected. Waiting for reconnect...";
+            } else if(type.equals("client_disconnect")) {
+                title = "Connect to a Host";
+                label = "Disconnected from Host. Retrying connection...";
+            }
+            
+            this.setTitle(title);
+
+            setBounds(100, 100, 450, 300);
+            getContentPane().setLayout(new BorderLayout());
+
+            JPanel m_contentPanel = new JPanel();
+            m_contentPanel.setLayout(new FlowLayout());
+            m_contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+            JPanel messagePane = new JPanel();
+            messagePane.setLayout(new GridLayout(2,1));
+            messagePane.add(new JLabel(label, SwingConstants.CENTER));
+            messagePane.add(new JLabel("Click 'Cancel' to cancel Host Mode.", SwingConstants.CENTER));
+            m_contentPanel.add(messagePane);
+            getContentPane().add(m_contentPanel, BorderLayout.CENTER);
+
+            JPanel buttonPane = new JPanel();
+            buttonPane.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+            JButton cancelButton = new JButton("Cancel");
+            cancelButton.setActionCommand("Cancel");
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    dialogClosed();
+                }
+            });
+
+            buttonPane.add(cancelButton);
+
+            getContentPane().add(buttonPane, BorderLayout.SOUTH);
+
+            this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            this.addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent we) {
+                    dialogClosed();
+                }
+            });
+        }
+        
+        private void dialogClosed() {
+            nes.networkDisable();
+            refreshMultiplayerMenu();
+            dispose();
         }
     }
 }

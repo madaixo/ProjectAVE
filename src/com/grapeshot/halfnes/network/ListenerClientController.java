@@ -18,4 +18,31 @@ public class ListenerClientController extends ListenerClient {
             nes.setCurrentRomName(((TitleMessage) object).title);
         }
     }
+    
+    @Override
+    public void disconnected(Connection c) {
+        super.disconnected(c);
+        client.setStopReconnect(false);
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                client.getNES().getGUI().showServerDisconnected();
+            }
+        });
+        new Thread(new Runnable() {
+            public void run() {
+                client.retryConnection();
+            }
+        }).start();
+    }
+    
+    @Override
+    public void connected(Connection c) {
+        super.connected(c);
+        client.setStopReconnect(true);
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                client.getNES().getGUI().hideDialog();
+            }
+        });
+    }
 }

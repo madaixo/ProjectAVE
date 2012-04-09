@@ -27,4 +27,25 @@ public class ListenerServerController extends ListenerServer {
             }
         }
     }
+    
+    @Override
+    public void disconnected(Connection c) {
+        super.disconnected(c);
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                server.getNES().getGUI().showClientDisconnected();
+            }
+        });
+    }
+    
+    @Override
+    public void connected(Connection c) {
+        super.connected(c);
+        this.server.sendTitle(this.server.getNES().getCurrentRomName());
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                server.getNES().getGUI().hideDialog();
+            }
+        });
+    }
 }

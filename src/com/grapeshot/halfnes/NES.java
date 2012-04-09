@@ -33,7 +33,6 @@ public class NES {
     private KryoServer server;
     private KryoClient client;
     private AudioOutInterface soundDevice = new SwingAudioImpl(this, prefs.getInt("sampleRate", 44100));
-    private Thread serverThread = null;
 
     private boolean hostMode = false, clientMode = false;
     private String hostAddress;
@@ -270,6 +269,7 @@ public class NES {
             runEmulation = false;
             saveSRAM(false);
         }
+        this.networkDisable();
         System.exit(0);
     }
 
@@ -293,6 +293,8 @@ public class NES {
     public synchronized void pause() {
         if (apu != null) {
             apu.pause();
+            audioVec.clear();   // this prevents the emulator from accumulating 
+                                // too many samples to send before client connects
         }
         runEmulation = false;
     }
@@ -356,44 +358,16 @@ public class NES {
         return controller2;
     }
 
-
-
-    public void setHostMode(boolean hostMode) {
-        this.hostMode = hostMode;
-        this.hostPort = defaultPort;
-    }
-
-    public void setHostMode(boolean hostMode, int hostPort) {
-        this.hostMode = hostMode;
-        this.setHostPort(hostPort);
-    }
-
-    public boolean setHostMode(int port){
-
-        this.server = new KryoServer(port, this);
-        if(!server.canBind()){
-            this.server = null;
-            //this.hostMode = false;
-        } else {
-            this.hostMode = true;
-            soundDevice.setServer(this.server);
-        }
-
-        return this.hostMode == true;
-    }
-
     public KryoServer getServer(){
         return this.server;
     }
 
     public void networkDisable(){
 
-        //TODO terminate server or client
-
         if(this.hostMode) {
             this.server.closeSocket();
-            this.serverThread.interrupt();
-            this.serverThread = null;
+        } else if(this.clientMode) {
+            this.client.closeConnection();
         }
 
         soundDevice.setServer(null);
@@ -403,6 +377,38 @@ public class NES {
 
         this.hostMode = false;
         this.clientMode = false;
+
+        this.controller1.stopEventQueue();
+        this.controller2.stopEventQueue();
+
+        this.controller1 = new ControllerImpl((GUIImpl) gui, this.getPrefs(), 0);
+        this.controller2 = new ControllerImpl((GUIImpl) gui, this.getPrefs(), 1);
+
+        this.controller1.startEventQueue();
+        this.controller2.startEventQueue();
+    }
+
+    public boolean setHostMode(int port){
+
+        this.server = new KryoServer(port, this);
+        if(!server.canBind()){
+            this.server = null;
+            this.hostMode = false;
+        } else {
+            this.hostMode = true;
+            soundDevice.setServer(this.server);
+            
+            this.controller1.stopEventQueue();
+            this.controller2.stopEventQueue();
+
+            this.controller1 = new ControllerImpl((GUIImpl) gui, this.getPrefs(), 0);
+            this.controller2 = new ControllerImplHost();
+
+            this.controller1.startEventQueue();
+            this.controller2.startEventQueue();
+        }
+        
+        return this.hostMode;
     }
 
     public boolean getHostMode() {
@@ -418,25 +424,25 @@ public class NES {
         return this.hostPort;
     }
 
-    public void setClientMode(boolean clientMode) {
-        this.clientMode = clientMode;
-    }
-
-    public void setClientMode(boolean clientMode, String hostAddress) {
-        this.clientMode = clientMode;
-        this.setHostAddress(hostAddress);
-    }
-
     public boolean setClientMode(String hostAddress, int hostPort){
-
         this.client = new KryoClient(hostAddress, hostPort, this);
         if(!client.openConnection()) {
             this.client = null;
-            //this.clientMode = false;
-        }else
+            this.clientMode = false;
+        } else {
             this.clientMode = true;
+            
+            this.controller1.stopEventQueue();
+            this.controller2.stopEventQueue();
 
-        return this.clientMode == true;
+            this.controller1 = new ControllerFake();
+            this.controller2 = new ControllerImplClient((GUIImpl) gui, this.getPrefs(), 1, this.client);
+
+            this.controller1.startEventQueue();
+            this.controller2.startEventQueue();
+        }
+
+        return this.clientMode;
     }
 
     public KryoClient getClient(){

@@ -54,6 +54,8 @@ public class KryoServer {
 
     public void closeSocket(){
         this.serverController.stop();
+        this.serverAudio.stop();
+        this.serverVideo.stop();
     }
 
     public NES getNES() {
