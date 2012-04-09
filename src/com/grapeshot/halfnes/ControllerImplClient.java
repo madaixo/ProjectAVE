@@ -41,7 +41,7 @@ public class ControllerImplClient extends ControllerImpl {
     @Override
     public void stopEventQueue() {
         super.stopEventQueue();
-        this.client.closeConnection();
+        // this.client.closeConnection();
     }
     
     // TODO: handle the gamepad keypresses/releases

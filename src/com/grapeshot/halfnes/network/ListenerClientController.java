@@ -22,17 +22,19 @@ public class ListenerClientController extends ListenerClient {
     @Override
     public void disconnected(Connection c) {
         super.disconnected(c);
-        client.setStopReconnect(false);
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                client.getNES().getGUI().showServerDisconnected();
-            }
-        });
-        new Thread(new Runnable() {
-            public void run() {
-                client.retryConnection();
-            }
-        }).start();
+        if(client.getNES().getClientMode()) {   // if false means user disabled
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    client.getNES().getGUI().showServerDisconnected();
+                }
+            });
+            new Thread(new Runnable() {
+                public void run() {
+                    client.setStopReconnect(false);
+                    client.retryConnection();
+                }
+            }).start();
+        }
     }
     
     @Override

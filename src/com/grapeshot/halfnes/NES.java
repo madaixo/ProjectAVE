@@ -365,8 +365,10 @@ public class NES {
     public void networkDisable(){
 
         if(this.hostMode) {
+            this.hostMode = false;
             this.server.closeSocket();
         } else if(this.clientMode) {
+            this.clientMode = false;
             this.client.closeConnection();
         }
 

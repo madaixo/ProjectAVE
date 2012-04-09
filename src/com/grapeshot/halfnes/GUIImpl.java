@@ -30,7 +30,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     private Renderer renderer;
     private ControllerInterface padController1, padController2;
 
-    private JMenu networkMenu = null;
+    private JMenu networkMenu = null, fileMenu = null, nesMenu = null;
     private JDialog connectionDialog = null;
 
     public GUIImpl(NES nes) {
@@ -125,6 +125,7 @@ public class GUIImpl extends JFrame implements GUIInterface {
     public void buildMenus() {
         JMenuBar menus = new JMenuBar();
         JMenu file = new JMenu("File");
+        fileMenu = file;
         JMenuItem item;
         file.add(item = new JMenuItem("Open ROM..."));
         item.addActionListener(listener);
@@ -148,8 +149,9 @@ public class GUIImpl extends JFrame implements GUIInterface {
         file.add(item = new JMenuItem("Quit"));
         item.addActionListener(listener);
         menus.add(file);
-
+        
         JMenu nesmenu = new JMenu("NES");
+        nesMenu = nesmenu;
         nesmenu.add(item = new JMenuItem("Reset"));
         item.addActionListener(listener);
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R,
@@ -362,15 +364,28 @@ public class GUIImpl extends JFrame implements GUIInterface {
         JMenuItem disableItem = this.networkMenu.getItem(0);
         JMenuItem hostItem = this.networkMenu.getItem(2);   // pos = 1 is the separator
         JMenuItem clientItem = this.networkMenu.getItem(3);
+        JMenuItem openRom = this.fileMenu.getItem(0);
 
         if(!nes.isNetworkActive()) {
             disableItem.setEnabled(false);
             hostItem.setEnabled(true);
             clientItem.setEnabled(true);
+            openRom.setEnabled(true);
+            nesMenu.setEnabled(true);
+            networkMenu.setText("Network MP");
         } else {
             disableItem.setEnabled(true);
             hostItem.setEnabled(false);
             clientItem.setEnabled(false);
+            
+            if(nes.getClientMode()) {
+                networkMenu.setText("Network MP: Client");
+                openRom.setEnabled(false);
+                nesMenu.setEnabled(false);
+            } else {
+                networkMenu.setText("Network MP: Host");
+                nesMenu.setEnabled(true);
+            }
         }
     }
 
@@ -419,12 +434,16 @@ public class GUIImpl extends JFrame implements GUIInterface {
                     nes.quit();
                 }
             } else if(arg0.getActionCommand().equals("Disable")) {
-
+                boolean clientMode = nes.getClientMode();
                 nes.networkDisable();
-
                 refreshMultiplayerMenu();
+                if(clientMode) {
+                    Graphics g = canvas.getGraphics();
+                    g.setColor(canvas.getBackground());
+                    g.fillRect(canvas.getX(), canvas.getY(), canvas.getWidth(), canvas.getHeight());
+                    canvas.paint(g);
+                }
             } else if(arg0.getActionCommand().equals("Run as Host")) {
-
                 String port = String.valueOf(nes.getPrefs().getInt("HostPort", NES.defaultPort));
                 
                 do{
@@ -447,7 +466,6 @@ public class GUIImpl extends JFrame implements GUIInterface {
                 
                 refreshMultiplayerMenu();
             } else if(arg0.getActionCommand().equals("Connect to a Host")) {
-
                 String hostAddress = null;
 
                 String currentAddress = nes.getPrefs().get("lastHost", "127.0.0.1:"+NES.defaultPort);

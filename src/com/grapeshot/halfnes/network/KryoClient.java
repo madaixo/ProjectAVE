@@ -86,7 +86,10 @@ public class KryoClient {
     }
 
     public void closeConnection() {
-        this.stopReconnect = true;  
+        this.stopReconnect = true;
+        this.client.close();
+        this.clientAudio.close();
+        this.clientVideo.close();
         this.client.stop();
         this.clientAudio.stop();
         this.clientVideo.stop();

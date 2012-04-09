@@ -31,11 +31,13 @@ public class ListenerServerController extends ListenerServer {
     @Override
     public void disconnected(Connection c) {
         super.disconnected(c);
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                server.getNES().getGUI().showClientDisconnected();
-            }
-        });
+        if(server.getNES().getHostMode()) {   // if false means user disabled
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    server.getNES().getGUI().showClientDisconnected();
+                }
+            });
+        }
     }
     
     @Override
